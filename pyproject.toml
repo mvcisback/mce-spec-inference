@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "mce-spec-inference"
+version = "0.1.0"
+description = "Maximum Causal Entropy Specification Inference."
+authors = ["Marcell Vazquez-Chanlatte <mvc@linux.com>"]
+license = "MIT"
+readme="README.md"
+repository = "https://github.com/mvcisback/mce-spec-inference"
+packages = [
+    { include = "mce"},
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+theano = "^1.0"
+py-aiger-coins = {version = "^1.2", extras = ["sat"]}
+py-aiger-bv = "^1.2"
+py-aiger-bdd = "^0.2.3"
+attrs = "^19.3"
+funcy = "^1.13"
+fold-bdd = "^0.1.1"
+
+[tool.poetry.dev-dependencies]
+codecov = "^2.0"
+hypothesis = "^4.42"
+py-aiger-bdd = "^0.2.3"
+py-aiger-sat = "^1.0"
+pytest-cov = "^2.7"
+pytest-flake8 = "^1.0"
+pytest-sugar = "^0.9.2"
+pytest-xdist = "^1.29"
+py-aiger-ptltl = "^1.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
