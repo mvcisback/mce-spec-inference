@@ -5,124 +5,113 @@
 #    - Perhaps implement more generally first.
 # 3. Force variable ordering to be correct
 # https://github.com/tulip-control/dd/blob/master/examples/cudd_configure_reordering.py
-
-from math import log
-
-import aiger_bv
-import aiger_coins
-import aiger_bdd
+# rationality = theano.dscalar('rationality')
+# TODO: switch to theano
 import attr
 import funcy as fn
 import theano
 import theano.tensor as T
+import numpy as np
 from fold_bdd import fold_path, post_order
+from scipy.optimize import brentq
 
-
-@attr.s(frozen=True, auto_attribs=True)
-class BitOrder:
-    decision_bits: int
-    chance_bits: int
-    horizon: int
-
-    @property
-    def total_bits(self) -> int:
-        return self.decision_bits + self.chance_bits
-
-    def round_index(self, lvl) -> int:
-        return lvl % self.total_bits
-
-    def is_decision(self, lvl) -> bool:
-        return self.round_index(level) >= self.decision_bits
-
-    def skipped_decisions(self, lvl1, lvl2) -> int:
-        ri1, ri2 = self.round_index(lvl1), self.round_index(lvl2)
-        tb = self.total_bits
-
-        skipped_rounds = ((lvl2 - ri2) - (lvl1 - (tb - ri1)))
-        assert skipped_rounds % tb == 0
-        skipped_rounds //= tb
-
-        start = self.is_decision(lvl1) * (self.decision_bits - ri1)
-        middle = self.decision_bits * skipped_rounds
-        end = self.is_decision(lvl2) * ri2
-
-        total = start + middle + end
-        assert total < (lvl2 - lvl1)
-        return total
-
-    def delta(self, lvl1, lvl2, val):
-        return val + self.skipped_decisions*log(2)
-
-    def itvl(self, lvl):
-        # TODO
-        raise NotImplementedError
-
-
-def to_bdd(mdp, horizon):
-    circ = mdp.aigbv 
-    circ >>= aiger_bv.sink(1, ['##valid'])  # TODO: handle ##valid.
-    circ = circ.unroll(horizon, only_last_outputs=True)
-
-    bdd, manager, input2var = aiger_bdd.to_bdd(circ)
-
-    inputs = mdp.inputs
-    env_inputs = circ.inputs - mdp.inputs
-    # Force order to be causal.
-    def relabeled(t):
-        def fmt(i):
-            return f"{input2var[i]}##time_{t}"
-        
-        actions = fn.lmap(fmt, inputs)
-        coin_flips = fn.lmap(fmt, env_inputs)
-        return actions + coin_flips
-
-    unrolled_inputs = fn.mapcat(relabeled, range(horizon))
-    manager.reorder({k: i for i, k in enumerate(unrolled_inputs)})
-    manager.configure(reordering=False)
-
-    order = BitOrder(len(inputs), len(env_inputs), horizon)
-    return bdd, manager, input2var, order
+from mce.order import BitOrder
+from mce.bdd import to_bdd
  
+
+def softmax(x, y):
+    return T.log(T.exp(x) + T.exp(y))
+
+
+def avg(x, y):
+    return (x + y) / 2
+
 
 def policy(mdp, spec, horizon, coeff):
     mdp >>= spec
-    bdd, manager, input2var, order = to_bdd(mdp, horizon)
+    bdd, _, relabels, order = to_bdd(mdp, horizon)
 
-    
-# TODO:
-# 1. propogate expectation computation.
-# 2. return dictionary of outputs including Q and V values.
-# 3. index Q and V values by node.
-def to_func(root, ctree):
-    rationality = theano.dscalar('rationality')
-    discount = theano.dscalar('discount')
-    max_lvl = len(ctree.manager.vars)
-
-    node2expr = {}
-    def child_val(node, child):
-        # true and false are at MAXINT level.
-        child_level = min(child.level, max_lvl + 1)
-        return ctree.delta(node.level, child_level, _to_func(child))
-
-    def reward(node):
-        r = 2*(node == ctree.manager.true) - 1
-
-        return r
-
-    def _to_func(node):
-        if node in (ctree.manager.true, ctree.manager.false):
-            expr = reward(node)
+    def merge(ctx, low, high):
+        if ctx.is_leaf:
+            val = coeff*(2*ctx.node_val - 1)
+            tbl = {ctx.node: val}
         else:
-            left, right = [child_val(node, c) for c in (node.low, now.high)]
+            (tbl_l, val_l), (tbl_r, val_r) = low, high
+            tbl = fn.merge(tbl_l, tbl_r)
 
-            if ctree.is_decision(node):
-                expr = T.log(T.exp(left) + T.exp(right))
+            op = softmax if order.is_decision(ctx.curr_lvl) else avg
+            val = op(val_l, val_r)
+            tbl[ctx.node] = val
+
+        val = ctx.delta(ctx.curr_lvl, ctx.prev_lvl, val)
+        return tbl, val
+
+    tbl = post_order(bdd, merge)[0]
+    return Policy(coeff, tbl, order, bdd, relabels)
+
+
+def _post_process(p, q, citvl, pitvl, ctx, order):
+    if citvl == pitvl:  # Not at decision boundary.
+        return p, q
+    elif not order.is_decision(ctx.prev_lvl):  # Equiv decision bump.
+        return p, ctx.delta(ctx.curr_lvl, ctx.prev_lvl, q)
+
+    # Decision boundary. Weight by (prob of action) * (num actions).
+    p *= T.exp(q)*(ctx.prev_lvl) - pitvl.bot - 1)
+    return p, None
+
+
+@attr.s
+class Policy:
+    coeff = attr.ib()
+    tbl = attr.ib()
+    order = attr.ib()
+    bdd = attr.ib()
+    relabels = attr.ib()
+    _fitted = attr.ib(default=False)
+
+    def psat(self):
+        def merge(ctx, low, high):
+            citvl = self.order.interval(ctx.curr_lvl)
+            pitvl = self.order.interval(ctx.prev_lvl)
+            decision = self.order.is_decision(ctx.curr_lvl)
+
+            if ctx.is_leaf:
+                p = q = int(ctx.node_val)
+                return _post_process(p, q, citvl, pitvl, ctx, self.order)
+
+            (pl, ql), (pr, qr) = low, high
+            if not decision:
+                p = avg(pl, ph)
+                q = self.tbl[ctx.node]
+                return post_process(p, q, citvl, pitvl, ctx, self.order)
+
+            p = pl + ph
+            if citvl == pitvl:
+                p *= ctx.skipped_decisions
             else:
-                expr = (left + right) / 2
-        node2expr[node] = -rationality*x - k*discount*T.log(2)
-        return expr
+                p *= (citvl.top - ctx. curr_lvl - 1)
+                p /= T.exp(tbl[ctx.node])  # Normalize.
 
-    _to_func(root)
+            return post_process(p, q, citvl, pitvl, ctx, self.order)
 
-    return node2expr
+        return post_order(self.bdd, merge)[0]
 
+    def fit(self, sat_prob, top=100, fudge=1e-3):
+        # TODO: binary search or root find.
+        sat_prob = min(sat_prob, 1 - fudge)
+        f = tensor.function([self.coeff], self.psat() - sat_prob)
+        coeff = brentq(f, 0, top)
+        self._fitted = True
+        # TODO: transform tbl to use correct coeff.
+        raise NotImplementedError()
+
+    def likelihood(self, trcs):
+        return np.product(map(self._likelihood, trcs))
+
+    def _likelihood(self, trc):
+        def prob(ctx, val, acc):
+            pval = 1  # TODO: compute pval given ctx and policy.
+            return acc * pval
+
+        return fold_path(merge=prob, bexpr=self.bdd, vals=trc, initial=1)
