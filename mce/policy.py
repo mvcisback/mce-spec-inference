@@ -27,10 +27,11 @@ def avg(x, y):
     return (x + y) / 2
 
 
-def policy(mdp, spec, horizon, coeff):
+def policy(mdp, spec, horizon, coeff="coeff"):
     mdp >>= spec
     bdd, _, relabels, order = to_bdd(mdp, horizon)
-
+    
+    coeff = T.dscalar(coeff)
     def merge(ctx, low, high):
         if ctx.is_leaf:
             val = coeff*(2*ctx.node_val - 1)
