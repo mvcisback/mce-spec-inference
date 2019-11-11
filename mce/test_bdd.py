@@ -18,6 +18,9 @@ def test_smoke():
     spec >>= C.circ2mdp(BV.sink(3, ['c']))  # HACK
 
     bdd, manager, input2var, order = to_bdd(spec, horizon=3)    
+
+    assert bdd.dag_size == 4
+
     for i in range(order.total_bits*order.horizon):
         t = order.time_step(i)
         var = input2var.inv[manager.var_at_level(i)]
