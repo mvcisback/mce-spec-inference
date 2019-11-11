@@ -57,7 +57,7 @@ def _post_process(p, q, citvl, pitvl, ctx, order):
         return p, ctx.delta(ctx.curr_lvl, ctx.prev_lvl, q)
 
     # Decision boundary. Weight by (prob of action) * (num actions).
-    p *= T.exp(q)*(ctx.prev_lvl) - pitvl.bot - 1)
+    p *= T.exp(q)*(ctx.prev_lvl - pitvl[0] - 1)
     return p, None
 
 
@@ -90,7 +90,7 @@ class Policy:
             if citvl == pitvl:
                 p *= ctx.skipped_decisions
             else:
-                p *= (citvl.top - ctx. curr_lvl - 1)
+                p *= (citvl[1] - ctx. curr_lvl - 1)
                 p /= T.exp(tbl[ctx.node])  # Normalize.
 
             return post_process(p, q, citvl, pitvl, ctx, self.order)
