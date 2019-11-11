@@ -55,4 +55,33 @@ class BitOrder:
     def skipped_decisions(self, lvl1, lvl2) -> int:
         if lvl2 < lvl1:
             return -self.skipped_decisions(lvl2, lvl1)
-        return skipped_decisions_naive(self, lvl1, lvl2)
+        elif lvl2 - lvl1 <= 1:
+            return 0
+        elif self.total_bits == 1:
+            assert self.decision_bits == 1
+            return lvl2 - lvl1 - 1
+
+        itvl1, itvl2 = map(self.time_interval, (lvl1 + 1, lvl2 - 1))
+        if itvl1 == itvl2:
+            return self._rrd(lvl1 + 1, lvl2 - 1)
+
+        skipped_rounds = self.skipped_time_steps(lvl1, lvl2)
+
+        start = (lvl1 >= itvl1[0])*self._rrd(lvl1 + 1, itvl1[1])
+        middle = self.decision_bits * skipped_rounds
+        end = (lvl2 <= itvl2[1])*self._used_decisions(lvl2 - 1)
+        return start + middle + end
+
+    def _rrd(self, lvl1, lvl2):
+        """Remaining Round Decisions"""
+        if not self.is_decision(lvl1):
+            return 0
+
+        idx1, idx2 = map(self.round_index, (lvl1, lvl2))
+        idx2 = min(idx2, self.decision_bits - 1)
+        return idx2 - idx1 + 1
+
+
+    def _used_decisions(self, lvl):
+        """Remaining Round Decisions"""
+        return min(self.decision_bits, self.round_index(lvl) + 1)
