@@ -4,6 +4,13 @@ from typing import Tuple
 import attr
 
 
+def skipped_decisions_naive(order, lvl1, lvl2):
+    if lvl2 < lvl1:
+        return -order.skipped_decisions(lvl2, lvl1)
+
+    return sum(order.is_decision(lvl) for lvl in range(lvl1 + 1, lvl2))
+
+
 @attr.s(frozen=True, auto_attribs=True)
 class BitOrder:
     decision_bits: int
@@ -48,23 +55,4 @@ class BitOrder:
     def skipped_decisions(self, lvl1, lvl2) -> int:
         if lvl2 < lvl1:
             return -self.skipped_decisions(lvl2, lvl1)
-        elif lvl2 - lvl1 <= 1:
-            return 0
-
-        skipped_rounds = self.skipped_time_steps(lvl1, lvl2)
-
-        lvl1, lvl2 = lvl1 + 1, lvl2 - 1
-        levels_between = lvl2 - lvl1 + 1
-
-        itvl1, itvl2 = map(self.interval, (lvl1, lvl2))
-        if itvl1 == itvl2 and self.is_decision(lvl1):
-            return levels_between
-        
-        ri1, ri2 = self.round_index(lvl1), self.round_index(lvl2)
-        total = self.decision_bits * skipped_rounds
-        if itvl1 != itvl2:
-            total += self.is_decision(lvl2) * (ri2 + 1)
-            total += self.is_decision(lvl1) * (self.decision_bits - ri1)
-
-        assert 0 <= total <= levels_between
-        return total
+        return skipped_decisions_naive(self, lvl1, lvl2)

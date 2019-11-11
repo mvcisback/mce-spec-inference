@@ -1,4 +1,15 @@
+import hypothesis.strategies as st
+from hypothesis import given
+
 from mce.order import BitOrder
+
+
+def skipped_decisions_naive(order, lvl1, lvl2):
+    if lvl2 < lvl1:
+        return -order.skipped_decisions(lvl2, lvl1)
+
+    return sum(order.is_decision(lvl) for lvl in range(lvl1 + 1, lvl2))
+
 
 def test_smoke():
     order = BitOrder(decision_bits=2, chance_bits=3, horizon=4)
@@ -43,10 +54,33 @@ def test_smoke():
     assert order.skipped_decisions(1, 16) == 5
     assert order.skipped_decisions(2, 16) == 5
 
+
+NAT = st.integers(min_value=0, max_value=10)
+POS_NAT = st.integers(min_value=1, max_value=10)
+
+
+@given(POS_NAT, NAT)
+def test_deterministic(db, lvl):
+    order = BitOrder(decision_bits=db, chance_bits=0, horizon=4)
+    assert order.is_decision(lvl)
+    assert order.time_interval(lvl) == order.interval(lvl)
+
+
+@given(POS_NAT, NAT, NAT, NAT)
+def test_skipped_decisions(db, cb, lvl, offset):
+    order = BitOrder(decision_bits=db, chance_bits=cb, horizon=4)
+    assert order.skipped_decisions(lvl, lvl + offset) == \
+        skipped_decisions_naive(order, lvl, lvl + offset)
+
+
+@given(POS_NAT, NAT)
+def test_monotonicity(db, cb):
+    order = BitOrder(decision_bits=db, chance_bits=cb, horizon=4)
+
     for i in range(1, 15):
         assert order.skipped_time_steps(i, i) == 0
         for j in range(4):
-            k = i + 5*(j + 1)
+            k = i + (order.total_bits)*(j + 1)
             assert order.skipped_time_steps(i, k) == j
             assert order.skipped_time_steps(i, k) == \
                 -order.skipped_time_steps(k, i)
@@ -57,3 +91,23 @@ def test_smoke():
         for j in range(i+1, 15):
             curr = order.skipped_decisions(i, j)
             assert prev <= curr
+
+
+def test_smoke2():
+    order = BitOrder(decision_bits=1, chance_bits=1, horizon=4)
+    for x in range(15):
+        assert order.time_step(2*x) == x
+        assert order.time_step(2*x + 1) == x
+        assert order.interval(x) == (x, x)
+
+        assert order.skipped_time_steps(x, x) == 0
+        assert order.skipped_time_steps(x, x + 1) == 0
+        assert order.skipped_time_steps(x, x + 2) == 0
+        assert order.skipped_time_steps(x, x + 3) <= 1
+        assert order.skipped_time_steps(x, x + 4) == 1
+
+        assert order.skipped_decisions(x, x) == 0
+        assert order.skipped_decisions(x, x + 1) == 0
+        assert order.skipped_decisions(x, x + 2) <= 1
+        assert order.skipped_decisions(x, x + 3) == 1
+        assert order.skipped_decisions(x, x + 4) <= 2
