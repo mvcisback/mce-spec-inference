@@ -17,7 +17,8 @@ class BitOrder:
     def round_index(self, lvl: int) -> int:
         return lvl % self.total_bits
 
-    def is_decision(self, lvl: int) -> bool:
+    def is_decision(self, lvl_ctx) -> bool:
+        lvl = lvl_ctx if isinstance(lvl_ctx, int) else lvl_ctx.curr_lvl
         return self.round_index(lvl) < self.decision_bits
 
     def time_interval(self, lvl: int) -> Tuple[int]:

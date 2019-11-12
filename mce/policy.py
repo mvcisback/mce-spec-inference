@@ -41,7 +41,7 @@ def policy(mdp, spec, horizon, coeff="coeff"):
             (tbl_l, val_l), (tbl_r, val_r) = low, high
             tbl = fn.merge(tbl_l, tbl_r)
 
-            op = softmax if order.is_decision(ctx.curr_lvl) else avg
+            op = softmax if order.is_decision(ctx) else avg
             val = op(val_l, val_r)
             tbl[ctx.node] = val
 
@@ -70,13 +70,10 @@ class Policy:
             q = self.tbl[ctx.node]
             if ctx.is_leaf:
                 p = int(ctx.node_val)
-            elif order.is_decision(ctx.curr_lvl):
-                p = low + high
-
-                if order.on_boundary(ctx):
-                    p /= exp(q)
-            else:
+            elif not order.is_decision(ctx):
                 p = avg(low, high)
+            else:
+                p = (low + high) / (int(order.on_boundary(ctx))*exp(q))
 
             first_decision = order.first_real_decision(ctx)
             prev_was_decision = order.prev_was_decision(ctx)
@@ -106,7 +103,6 @@ class Policy:
             sat_prob = sat_prob_or_trcs
 
         assert not self._fitted
-        # TODO: binary search or root find.
         sat_prob = min(sat_prob, 1 - fudge)
         f = theano.function([self.coeff], self.psat() - sat_prob)
         coeff = brentq(f, 0, top)
@@ -146,22 +142,17 @@ class Policy:
             q = self.tbl[ctx.node]
             if ctx.is_leaf:
                 return acc + q
-            elif not order.is_decision(ctx.curr_lvl):
+            elif not order.is_decision(ctx):
                 return acc - np.log(2)  # Flip fair coin
-            
-            prev_lvl = -1 if ctx.prev_lvl is None else ctx.prev_lvl
 
-            on_boundary = order.interval(ctx.curr_lvl) != \
-                self.order.interval(prev_lvl)
-
-            if on_boundary:
+            if order.on_boundary(ctx):
                 acc -= q
             
             first_decision = order.first_real_decision(ctx)
             prev_was_decision = order.prev_was_decision(ctx)
+
             if first_decision or prev_was_decision:
-                skipped = self.order.skipped_decisions(prev_lvl, ctx.curr_lvl)
-                acc -= skipped*np.log(2)
+                acc -= order.decisions_on_edge(ctx)*np.log(2)
 
             if (not first_decision) and prev_was_decision:
                 acc += q
