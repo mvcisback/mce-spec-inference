@@ -44,7 +44,8 @@ def policy(mdp, spec, horizon, coeff="coeff"):
             val = op(val_l, val_r)
             tbl[ctx.node] = val
 
-        val = ctx.delta(ctx.curr_lvl, ctx.prev_lvl, val)
+        prev_lvl = -1 if ctx.prev_lvl is None else ctx.prev_lvl
+        val = order.delta(ctx.curr_lvl, prev_lvl, val)
         return tbl, val
 
     tbl = post_order(bdd, merge)[0]

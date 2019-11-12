@@ -11,3 +11,4 @@ def test_smoke():
     spec = C.circ2mdp(spec)
 
     mdp = C.circ2mdp(BV.identity_gate(1, 'a'))
+    policy(mdp, spec, horizon=3)
