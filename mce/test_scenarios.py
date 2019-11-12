@@ -37,6 +37,8 @@ scenario2 = gen_scenario(
 
 
 SCENARIOS = st.one_of(
-    st.just(scenario1),
-    st.just(scenario2),
+    st.just(gen_scenario(spec=SPEC1, sys=sys1())),
+    st.just(gen_scenario(spec=SPEC2, sys=sys1())),
+    st.just(gen_scenario(spec=SPEC1, sys=sys2())),
+    st.just(gen_scenario(spec=SPEC2, sys=sys2())),
 )
