@@ -85,3 +85,7 @@ class BitOrder:
     def _used_decisions(self, lvl):
         """Remaining Round Decisions"""
         return min(self.decision_bits, self.round_index(lvl) + 1)
+
+    def on_boundary(self, ctx):
+        prev_lvl = -1 if ctx.prev_lvl is None else ctx.prev_lvl
+        return self.interval(ctx.curr_lvl) !=  self.interval(prev_lvl)

@@ -74,14 +74,10 @@ class Policy:
             elif self.order.is_decision(ctx.curr_lvl):
                 p = low + high
 
-                on_boundary = self.order.interval(ctx.curr_lvl) != \
-                    self.order.interval(prev_lvl)
-
-                if on_boundary:
+                if self.order.on_boundary(ctx):
                     p /= exp(q)
             else:
-                # TODO: Replace with avg after testing.
-                p = (low + high) / 2 
+                p = avg(low, high)
                 
             if prev_lvl == -1 or self.order.is_decision(prev_lvl):
                 skipped = self.order.skipped_decisions(prev_lvl, ctx.curr_lvl)
