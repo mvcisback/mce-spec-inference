@@ -93,21 +93,21 @@ def test_trc_likelihood():
     trc = ctrl.encode_trc(sys_actions, states)
     assert trc == [True, True, True]
     
-    prob_expected = exp(1 - V0) 
-    assert ctrl._likelihood(trc) == pytest.approx(prob_expected)
+    l_sat = 1 - V0
+    assert ctrl._log_likelihood(trc) == pytest.approx(l_sat)
 
-    p_fail = (1 - prob_expected) / 7
+    l_fail = log((1 - exp(l_sat)) / 7)
     for trc in combinations([False, True], 3):
-        prob = ctrl._likelihood(trc)
+        ll = ctrl._log_likelihood(trc)
         if all(trc):
-            assert prob == pytest.approx(prob_expected)
+            assert ll == pytest.approx(l_sat)
         else:
-            assert prob == pytest.approx(p_fail)
+            assert ll == pytest.approx(l_fail)
 
     sys_actions2 = states2 = 3*[{'a': (False,)}]
     demos = [(sys_actions, states), (sys_actions2, states2)]
-    p_demo = ctrl.likelihood(demos)
-    assert p_demo == pytest.approx(p_fail*prob_expected)
+    l_demo = ctrl.log_likelihood(demos)
+    assert l_demo == pytest.approx(l_fail + l_sat)
 
 
 def test_empierical_sat_prob():

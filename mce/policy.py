@@ -136,11 +136,11 @@ class Policy:
         trc = self.mdp.encode_trc(sys_actions, states)
         return list(self._encode_trc(trc))
 
-    def likelihood(self, trcs):
+    def log_likelihood(self, trcs):
         trcs = [self.encode_trc(*v) for v in trcs]
-        return np.product(fn.lmap(self._likelihood, trcs))
+        return sum(fn.lmap(self._log_likelihood, trcs))
 
-    def _likelihood(self, trc):
+    def _log_likelihood(self, trc):
         assert self._fitted
         def prob(ctx, val, acc):
             q = self.tbl[ctx.node]
@@ -165,5 +165,6 @@ class Policy:
                 acc *= np.exp(q)                
 
             return acc
-
-        return fold_path(merge=prob, bexpr=self.bdd, vals=trc, initial=1)
+        
+        _prob = fold_path(merge=prob, bexpr=self.bdd, vals=trc, initial=1)
+        return np.log(_prob)
