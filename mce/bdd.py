@@ -10,12 +10,13 @@ from mce.order import BitOrder
 TIMED_INPUT_MATCHER = re.compile(r'(.*)\[(\d+)\]##time_(\d+)')
 
 
-def to_bdd(mdp, horizon):
+def to_bdd(mdp, horizon, output=None):
     circ = mdp.aigbv 
     circ >>= aiger_bv.sink(1, ['##valid'])  # TODO: handle ##valid.
     unrolled = circ.aig.unroll(horizon, only_last_outputs=True)  # HACK
-
-    bdd, manager, input2var = aiger_bdd.to_bdd(unrolled)
+    if output is not None:
+        output = f"{output}##time_{horizon}"
+    bdd, manager, input2var = aiger_bdd.to_bdd(unrolled, output=output)
 
     # Force order to be causal.
     inputs = mdp.inputs

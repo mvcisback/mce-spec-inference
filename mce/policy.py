@@ -7,6 +7,8 @@
 # https://github.com/tulip-control/dd/blob/master/examples/cudd_configure_reordering.py
 # rationality = theano.dscalar('rationality')
 # TODO: switch to theano
+import aiger_bv as BV
+import aiger_coins as C
 import attr
 import funcy as fn
 import theano
@@ -29,8 +31,17 @@ def avg(x, y):
 
 def policy(mdp, spec, horizon, coeff="coeff"):
     orig_mdp = mdp
-    mdp >>= spec
-    bdd, _, relabels, order = to_bdd(mdp, horizon)
+    spec_circ = BV.aig2aigbv(spec.aig)
+    mdp >>= C.circ2mdp(spec_circ)
+    # HACK. TODO fix
+    for out, size in orig_mdp._aigbv.omap.items():
+        if out not in mdp.outputs:
+            continue
+        mdp >>= C.circ2mdp(BV.sink(size, out))
+
+    output = spec_circ.omap[spec.output][0]
+
+    bdd, _, relabels, order = to_bdd(mdp, horizon, output=output)
     
     coeff = T.dscalar(coeff)
     def merge(ctx, low, high):
@@ -65,11 +76,12 @@ class Policy:
 
     def psat(self):
         exp = np.exp if self._fitted else T.exp
+        const = (lambda x: x) if self._fitted else T.constant
         order = self.order
         def merge(ctx, low, high):
             q = self.tbl[ctx.node]
             if ctx.is_leaf:
-                p = int(ctx.node_val)
+                p = const(int(ctx.node_val))
             elif not order.is_decision(ctx):
                 p = avg(low, high)
             else:
@@ -78,7 +90,7 @@ class Policy:
             first_decision = order.first_real_decision(ctx)
             prev_was_decision = order.prev_was_decision(ctx)
                 
-            if first_decision or prev_was_decision:
+            if not first_decision and prev_was_decision:
                 skipped = order.decisions_on_edge(ctx)
                 p *= 2**skipped
 
@@ -90,9 +102,9 @@ class Policy:
         return post_order(self.bdd, merge)
 
     def empirical_sat_prob(self, trcs):
+        trcs = [self.mdp.encode_trc(*v) for v in trcs]
         circ = self.mdp.aigbv
         name = fn.first(self.mdp.outputs)
-        trcs = [self.mdp.encode_trc(*v) for v in trcs]
         n_sat = sum(circ.simulate(trc)[-1][0][name][0] for trc in trcs)
         return n_sat / len(trcs)
 
@@ -104,10 +116,15 @@ class Policy:
 
         assert not self._fitted
         sat_prob = min(sat_prob, 1 - fudge)
-        f = theano.function([self.coeff], self.psat() - sat_prob)
+        f = theano.function(
+            [self.coeff], self.psat() - sat_prob, on_unused_input='ignore'
+        )
         coeff = brentq(f, 0, top)
         self._fitted = True
         self.fix_coeff(coeff)
+        
+        if not isinstance(sat_prob_or_trcs, float):
+            return self.log_likelihood(sat_prob_or_trcs)
 
     def fix_coeff(self, coeff):
         for k, val in self.tbl.items():
@@ -126,12 +143,16 @@ class Policy:
             assert t1 == int(t2)
             yield trc[t1][name][int(idx)]
 
+    def encode_trcs(self, trcs):
+        return [self.encode_trc(*v) for v in trcs]
+
     def encode_trc(self, sys_actions, states):
         trc = self.mdp.encode_trc(sys_actions, states)
         return list(self._encode_trc(trc))
 
-    def log_likelihood(self, trcs):
-        trcs = [self.encode_trc(*v) for v in trcs]
+    def log_likelihood(self, trcs, encoded=False):
+        if not encoded:
+            trcs = self.encode_trcs(trcs)
         return sum(fn.lmap(self._log_likelihood, trcs))
 
     def _log_likelihood(self, trc):

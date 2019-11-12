@@ -1,24 +1,13 @@
 from itertools import combinations_with_replacement as combinations
 
-import aiger_bv as BV
-import aiger_coins as C
-import aiger_ptltl as PLTL
+import hypothesis.strategies as st
 import pytest
-from theano import function
+import theano
+from hypothesis import given
 from numpy import logaddexp, exp, log
 
 from mce.policy import policy
-
-
-def sys1(negate=False):
-    spec = PLTL.atom('a').historically()
-    if negate:
-        spec = ~spec
-    spec = BV.aig2aigbv(spec.aig)
-    spec = C.circ2mdp(spec)
-
-    mdp = C.circ2mdp(BV.identity_gate(1, 'a'))    
-    return spec, mdp
+from mce.test_scenarios import scenario1, SCENARIOS
 
 
 V2 = logaddexp(-1, 1)
@@ -26,8 +15,12 @@ V1 = logaddexp(log(2) - 1, V2)
 V0 = logaddexp(2*log(2) - 1, V1)
 
 
+def function(*args, **kwargs):
+    kwargs['on_unused_input'] = 'ignore'
+    return theano.function(*args, **kwargs)
+
 def test_smoke_policy():
-    spec, mdp = sys1()
+    spec, mdp = scenario1()
 
     ctrl = policy(mdp, spec, horizon=3)
     assert len(ctrl.tbl) == 5
@@ -63,18 +56,40 @@ def test_smoke_policy():
     prand = ctrl.bdd.count(3) / 2**3
     assert psat(0) == pytest.approx(prand)
 
-    spec2, mdp2 = sys1(negate=True)
+@given(SCENARIOS)
+def test_coeff_zero(scenario):
+    # Lower bound on negated policy.
+    spec, mdp = scenario()
+    ctrl = policy(mdp, spec, horizon=3)
+    psat = function([ctrl.coeff], ctrl.psat())
+
+
+
+    spec2, mdp2 = scenario1(negate=True)
     ctrl2 = policy(mdp2, spec2, horizon=3)
     psat2 = function([ctrl2.coeff], ctrl2.psat())
 
-    # Lower bound on negated policy.
-    for i in range(10):
-        assert psat2(1) >= 1 - psat(1)
-        assert psat(1) >= 1 - psat2(1)
+    assert psat(0) in (0, 1) or psat2(0) == psat(0)
+
+
+
+@given(SCENARIOS)
+def test_negated_policy_lowbound(scenario):
+    spec, mdp = scenario()
+    ctrl = policy(mdp, spec, horizon=3)
+    psat = function([ctrl.coeff], ctrl.psat())
+
+    spec2, mdp2 = scenario(negate=True)
+    ctrl2 = policy(mdp2, spec2, horizon=3)
+    psat2 = function([ctrl2.coeff], ctrl2.psat())
+
+    for i in range(1, 10):
+        assert psat2(i) >= 1 - psat(i)
+        assert psat(i) >= 1 - psat2(i)
 
     
 def test_psat_mock():
-    spec, mdp = sys1()
+    spec, mdp = scenario1()
     ctrl = policy(mdp, spec, horizon=3)
     ctrl.fix_coeff(1)
     assert ctrl._fitted
@@ -85,7 +100,7 @@ def test_psat_mock():
 
 
 def test_trc_likelihood():
-    spec, mdp = sys1()
+    spec, mdp = scenario1()
     ctrl = policy(mdp, spec, horizon=3)
     ctrl.fix_coeff(1)
 
@@ -111,7 +126,7 @@ def test_trc_likelihood():
 
 
 def test_empierical_sat_prob():
-    spec, mdp = sys1()
+    spec, mdp = scenario1()
     ctrl = policy(mdp, spec, horizon=3)
 
     sys_actions = states = 3*[{'a': (True,)}]
@@ -122,7 +137,7 @@ def test_empierical_sat_prob():
 
 
 def test_fit():
-    spec, mdp = sys1()
+    spec, mdp = scenario1()
     ctrl = policy(mdp, spec, horizon=3)
     ctrl.fit(0.8)
     assert ctrl.coeff > 1
