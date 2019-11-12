@@ -108,3 +108,22 @@ def test_trc_likelihood():
     demos = [(sys_actions, states), (sys_actions2, states2)]
     p_demo = ctrl.likelihood(demos)
     assert p_demo == pytest.approx(p_fail*prob_expected)
+
+
+def test_empierical_sat_prob():
+    spec, mdp = sys1()
+    ctrl = policy(mdp, spec, horizon=3)
+
+    sys_actions = states = 3*[{'a': (True,)}]
+    sys_actions2 = states2 = 3*[{'a': (False,)}]
+    demos = [(sys_actions, states), (sys_actions2, states2)]
+
+    assert ctrl.empirical_sat_prob(demos) == 1/2
+
+
+def test_fit():
+    spec, mdp = sys1()
+    ctrl = policy(mdp, spec, horizon=3)
+    ctrl.fit(0.8)
+    assert ctrl.coeff > 1
+    assert ctrl.psat() == pytest.approx(0.8)

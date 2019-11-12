@@ -94,15 +94,26 @@ class Policy:
         
         return post_order(self.bdd, merge)
 
-    def fit(self, sat_prob, top=100, fudge=1e-3):
+    def empirical_sat_prob(self, trcs):
+        circ = self.mdp.aigbv
+        name = fn.first(self.mdp.outputs)
+        trcs = [self.mdp.encode_trc(*v) for v in trcs]
+        n_sat = sum(circ.simulate(trc)[-1][0][name][0] for trc in trcs)
+        return n_sat / len(trcs)
+
+    def fit(self, sat_prob_or_trcs, top=100, fudge=1e-3):
+        if not isinstance(sat_prob_or_trcs, float):
+            sat_prob = empirical_sat_prob(sat_prob_or_trcs)
+        else:
+            sat_prob = sat_prob_or_trcs
+
         assert not self._fitted
         # TODO: binary search or root find.
         sat_prob = min(sat_prob, 1 - fudge)
         f = theano.function([self.coeff], self.psat() - sat_prob)
         coeff = brentq(f, 0, top)
         self._fitted = True
-        # TODO: transform tbl to use correct coeff.
-        raise NotImplementedError()
+        self.fix_coeff(coeff)
 
     def fix_coeff(self, coeff):
         for k, val in self.tbl.items():
