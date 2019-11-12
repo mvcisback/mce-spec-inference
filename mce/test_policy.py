@@ -65,7 +65,7 @@ def test_smoke_policy():
     ctrl2 = policy(mdp2, spec2, horizon=3)
     psat2 = function([ctrl2.coeff], ctrl2.psat())
 
-    # Lower bound on negagted policy.
+    # Lower bound on negated policy.
     for i in range(10):
         assert psat2(1) >= 1 - psat(1)
         assert psat(1) >= 1 - psat2(1)
@@ -92,4 +92,5 @@ def test_trc_likelihood():
     trc2 = ctrl.encode_trc(trc)
     assert trc2 == [True, True, True]
     
-    ctrl._likelihood(trc)
+    prob_expected = exp(1 - V0)
+    assert ctrl._likelihood(trc) == pytest.approx(prob_expected)

@@ -125,8 +125,29 @@ class Policy:
         return np.product(map(self._likelihood, trcs))
 
     def _likelihood(self, trc):
+        assert self._fitted
         def prob(ctx, val, acc):
-            pval = 1  # TODO: compute pval given ctx and policy.
-            return acc * pval
+            q = self.tbl[ctx.node]
+            if ctx.is_leaf:
+                return acc * np.exp(q)
+            elif not self.order.is_decision(ctx.curr_lvl):
+                return acc / 2  # Flip fair coin
+            
+            prev_lvl = -1 if ctx.prev_lvl is None else ctx.prev_lvl
+
+            on_boundary = self.order.interval(ctx.curr_lvl) != \
+                self.order.interval(prev_lvl)
+
+            if on_boundary:
+                acc /= np.exp(q)
+                
+            if prev_lvl == -1 or self.order.is_decision(prev_lvl):
+                skipped = self.order.skipped_decisions(prev_lvl, ctx.curr_lvl)
+                acc /= 2**skipped
+
+            if prev_lvl != -1 and self.order.is_decision(prev_lvl):
+                acc *= np.exp(q)                
+
+            return acc
 
         return fold_path(merge=prob, bexpr=self.bdd, vals=trc, initial=1)
