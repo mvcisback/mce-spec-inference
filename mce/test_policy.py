@@ -49,12 +49,20 @@ def test_smoke_policy():
     assert 0 <= psat_expected <= 1
     assert psat(1) == pytest.approx(psat_expected)
 
+    prand = ctrl.bdd.count(3) / 2**3
+    assert psat(0) == pytest.approx(prand)
+
+
+@given(SCENARIOS)
+def test_psat_monotonicity(scenario):
+    spec, mdp = scenario()
+    ctrl = policy(mdp, spec, horizon=3)
+    psat = function([ctrl.coeff], ctrl.psat())
+
     prev = 0
     for i in range(10):
         assert prev <= psat(i)
 
-    prand = ctrl.bdd.count(3) / 2**3
-    assert psat(0) == pytest.approx(prand)
 
 @given(SCENARIOS)
 def test_coeff_zero(scenario):
@@ -63,14 +71,13 @@ def test_coeff_zero(scenario):
     ctrl = policy(mdp, spec, horizon=3)
     psat = function([ctrl.coeff], ctrl.psat())
 
-
+    
 
     spec2, mdp2 = scenario1(negate=True)
     ctrl2 = policy(mdp2, spec2, horizon=3)
     psat2 = function([ctrl2.coeff], ctrl2.psat())
 
     assert psat(0) in (0, 1) or psat2(0) == psat(0)
-
 
 
 @given(SCENARIOS)
