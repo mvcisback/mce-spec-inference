@@ -4,13 +4,6 @@ from typing import Tuple
 import attr
 
 
-def skipped_decisions_naive(order, lvl1, lvl2):
-    if lvl2 < lvl1:
-        return -order.skipped_decisions(lvl2, lvl1)
-
-    return sum(order.is_decision(lvl) for lvl in range(lvl1 + 1, lvl2))
-
-
 @attr.s(frozen=True, auto_attribs=True)
 class BitOrder:
     decision_bits: int
