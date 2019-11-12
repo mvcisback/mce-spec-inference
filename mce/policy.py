@@ -45,7 +45,7 @@ def policy(mdp, spec, horizon, coeff="coeff"):
             tbl[ctx.node] = val
 
         prev_lvl = -1 if ctx.prev_lvl is None else ctx.prev_lvl
-        val = order.delta(ctx.curr_lvl, prev_lvl, val)
+        val = order.delta(prev_lvl, ctx.curr_lvl, val)
         return tbl, val
 
     tbl = post_order(bdd, merge)[0]
@@ -56,7 +56,7 @@ def _post_process(p, q, citvl, pitvl, ctx, order):
     if citvl == pitvl:  # Not at decision boundary.
         return p, q
     elif not order.is_decision(ctx.prev_lvl):  # Equiv decision bump.
-        return p, ctx.delta(ctx.curr_lvl, ctx.prev_lvl, q)
+        return p, ctx.delta(ctx.prev_lvl, ctx.curr_lvl, q)
 
     # Decision boundary. Weight by (prob of action) * (num actions).
     p *= T.exp(q)*(ctx.prev_lvl - pitvl[0] - 1)
@@ -102,7 +102,7 @@ class Policy:
     def fit(self, sat_prob, top=100, fudge=1e-3):
         # TODO: binary search or root find.
         sat_prob = min(sat_prob, 1 - fudge)
-        f = tensor.function([self.coeff], self.psat() - sat_prob)
+        f = theano.function([self.coeff], self.psat() - sat_prob)
         coeff = brentq(f, 0, top)
         self._fitted = True
         # TODO: transform tbl to use correct coeff.
