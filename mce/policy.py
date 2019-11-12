@@ -28,6 +28,7 @@ def avg(x, y):
 
 
 def policy(mdp, spec, horizon, coeff="coeff"):
+    orig_mdp = mdp
     mdp >>= spec
     bdd, _, relabels, order = to_bdd(mdp, horizon)
     
@@ -49,7 +50,7 @@ def policy(mdp, spec, horizon, coeff="coeff"):
         return tbl, val
 
     tbl = post_order(bdd, merge)[0]
-    return Policy(coeff, tbl, order, bdd, relabels)
+    return Policy(coeff, tbl, order, bdd, orig_mdp, spec, relabels)
 
 
 @attr.s
@@ -58,6 +59,8 @@ class Policy:
     tbl = attr.ib()
     order = attr.ib()
     bdd = attr.ib()
+    mdp = attr.ib()
+    spec = attr.ib()
     relabels = attr.ib()
     _fitted = attr.ib(default=False)
 
@@ -118,11 +121,13 @@ class Policy:
             assert t1 == int(t2)
             yield trc[t1][name][int(idx)]
 
-    def encode_trc(self, trc):
+    def encode_trc(self, sys_actions, states):
+        trc = self.mdp.encode_trc(sys_actions, states)
         return list(self._encode_trc(trc))
 
     def likelihood(self, trcs):
-        return np.product(map(self._likelihood, trcs))
+        trcs = [self.encode_trc(*v) for v in trcs]
+        return np.product(fn.lmap(self._likelihood, trcs))
 
     def _likelihood(self, trc):
         assert self._fitted

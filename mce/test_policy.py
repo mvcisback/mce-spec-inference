@@ -1,3 +1,5 @@
+from itertools import combinations_with_replacement as combinations
+
 import aiger_bv as BV
 import aiger_coins as C
 import aiger_ptltl as PLTL
@@ -88,9 +90,21 @@ def test_trc_likelihood():
     ctrl.fix_coeff(1)
 
     sys_actions = states = 3*[{'a': (True,)}]
-    trc = mdp.encode_trc(sys_actions, states)
-    trc2 = ctrl.encode_trc(trc)
-    assert trc2 == [True, True, True]
+    trc = ctrl.encode_trc(sys_actions, states)
+    assert trc == [True, True, True]
     
-    prob_expected = exp(1 - V0)
+    prob_expected = exp(1 - V0) 
     assert ctrl._likelihood(trc) == pytest.approx(prob_expected)
+
+    p_fail = (1 - prob_expected) / 7
+    for trc in combinations([False, True], 3):
+        prob = ctrl._likelihood(trc)
+        if all(trc):
+            assert prob == pytest.approx(prob_expected)
+        else:
+            assert prob == pytest.approx(p_fail)
+
+    sys_actions2 = states2 = 3*[{'a': (False,)}]
+    demos = [(sys_actions, states), (sys_actions2, states2)]
+    p_demo = ctrl.likelihood(demos)
+    assert p_demo == pytest.approx(p_fail*prob_expected)
