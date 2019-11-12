@@ -140,26 +140,30 @@ class Policy:
 
     def _log_likelihood(self, trc):
         assert self._fitted
+        order = self.order
+
         def prob(ctx, val, acc):
             q = self.tbl[ctx.node]
             if ctx.is_leaf:
                 return acc + q
-            elif not self.order.is_decision(ctx.curr_lvl):
+            elif not order.is_decision(ctx.curr_lvl):
                 return acc - np.log(2)  # Flip fair coin
             
             prev_lvl = -1 if ctx.prev_lvl is None else ctx.prev_lvl
 
-            on_boundary = self.order.interval(ctx.curr_lvl) != \
+            on_boundary = order.interval(ctx.curr_lvl) != \
                 self.order.interval(prev_lvl)
 
             if on_boundary:
                 acc -= q
-                
-            if prev_lvl == -1 or self.order.is_decision(prev_lvl):
+            
+            first_decision = order.first_real_decision(ctx)
+            prev_was_decision = order.prev_was_decision(ctx)
+            if first_decision or prev_was_decision:
                 skipped = self.order.skipped_decisions(prev_lvl, ctx.curr_lvl)
                 acc -= skipped*np.log(2)
 
-            if prev_lvl != -1 and self.order.is_decision(prev_lvl):
+            if (not first_decision) and prev_was_decision:
                 acc += q
 
             return acc
