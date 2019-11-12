@@ -27,9 +27,6 @@ class BitOrder:
     def is_decision(self, lvl: int) -> bool:
         return self.round_index(lvl) < self.decision_bits
 
-    def delta(self, lvl1, lvl2, val):
-        return val + self.skipped_decisions(lvl1, lvl2)*log(2)
-
     def time_interval(self, lvl: int) -> Tuple[int]:
         idx = self.round_index(lvl)
         return lvl - idx, lvl + (self.total_bits - 1 - idx)
@@ -80,7 +77,6 @@ class BitOrder:
         idx1, idx2 = map(self.round_index, (lvl1, lvl2))
         idx2 = min(idx2, self.decision_bits - 1)
         return idx2 - idx1 + 1
-
 
     def _used_decisions(self, lvl):
         """Remaining Round Decisions"""
