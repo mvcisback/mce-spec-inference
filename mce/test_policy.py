@@ -56,6 +56,9 @@ def test_smoke_policy():
     for i in range(10):
         assert prev <= psat(i)
 
+    prand = ctrl.bdd.count(3) / 2**3
+    assert psat(0) == pytest.approx(prand)
+
 
 def test_psat_mock():
     spec, mdp = sys1()
