@@ -52,17 +52,6 @@ def policy(mdp, spec, horizon, coeff="coeff"):
     return Policy(coeff, tbl, order, bdd, relabels)
 
 
-def _post_process(p, q, citvl, pitvl, ctx, order):
-    if citvl == pitvl:  # Not at decision boundary.
-        return p, q
-    elif not order.is_decision(ctx.prev_lvl):  # Equiv decision bump.
-        return p, ctx.delta(ctx.prev_lvl, ctx.curr_lvl, q)
-
-    # Decision boundary. Weight by (prob of action) * (num actions).
-    p *= T.exp(q)*(ctx.prev_lvl - pitvl[0] - 1)
-    return p, None
-
-
 @attr.s
 class Policy:
     coeff = attr.ib()
@@ -73,33 +62,37 @@ class Policy:
     _fitted = attr.ib(default=False)
 
     def psat(self):
+        exp = np.exp if self._fitted else T.exp
         def merge(ctx, low, high):
-            citvl = self.order.interval(ctx.curr_lvl)
-            pitvl = self.order.interval(ctx.prev_lvl)
-            decision = self.order.is_decision(ctx.curr_lvl)
-
+            prev_lvl = -1 if ctx.prev_lvl is None else ctx.prev_lvl
+            q = self.tbl[ctx.node]
             if ctx.is_leaf:
-                p = q = int(ctx.node_val)
-                return _post_process(p, q, citvl, pitvl, ctx, self.order)
+                p = int(ctx.node_val)
+            elif self.order.is_decision(ctx.curr_lvl):
+                p = low + high
 
-            (pl, ql), (pr, qr) = low, high
-            if not decision:
-                p = avg(pl, ph)
-                q = self.tbl[ctx.node]
-                return post_process(p, q, citvl, pitvl, ctx, self.order)
+                on_boundary = self.order.interval(ctx.curr_lvl) != \
+                    self.order.interval(prev_lvl)
 
-            p = pl + ph
-            if citvl == pitvl:
-                p *= ctx.skipped_decisions
+                if on_boundary:
+                    p /= exp(q)
             else:
-                p *= (citvl[1] - ctx. curr_lvl - 1)
-                p /= T.exp(tbl[ctx.node])  # Normalize.
+                # TODO: Replace with avg after testing.
+                p = (low + high) / 2 
+                
+            if prev_lvl == -1 or self.order.is_decision(prev_lvl):
+                skipped = self.order.skipped_decisions(prev_lvl, ctx.curr_lvl)
+                p *= 2**skipped
 
-            return post_process(p, q, citvl, pitvl, ctx, self.order)
+            if prev_lvl != -1 and self.order.is_decision(prev_lvl):
+                p *= exp(q)                
 
-        return post_order(self.bdd, merge)[0]
+            return p
+        
+        return post_order(self.bdd, merge)
 
     def fit(self, sat_prob, top=100, fudge=1e-3):
+        assert not self._fitted
         # TODO: binary search or root find.
         sat_prob = min(sat_prob, 1 - fudge)
         f = theano.function([self.coeff], self.psat() - sat_prob)
@@ -107,6 +100,14 @@ class Policy:
         self._fitted = True
         # TODO: transform tbl to use correct coeff.
         raise NotImplementedError()
+
+    def fix_coeff(self, coeff):
+        for k, val in self.tbl.items():
+            self.tbl[k] = theano.function([self.coeff], val)(coeff)
+
+        self.coeff = coeff
+        self._fitted = True
+
 
     def likelihood(self, trcs):
         return np.product(map(self._likelihood, trcs))
