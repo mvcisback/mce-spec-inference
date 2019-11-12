@@ -66,24 +66,27 @@ class Policy:
 
     def psat(self):
         exp = np.exp if self._fitted else T.exp
+        order = self.order
         def merge(ctx, low, high):
-            prev_lvl = -1 if ctx.prev_lvl is None else ctx.prev_lvl
             q = self.tbl[ctx.node]
             if ctx.is_leaf:
                 p = int(ctx.node_val)
-            elif self.order.is_decision(ctx.curr_lvl):
+            elif order.is_decision(ctx.curr_lvl):
                 p = low + high
 
-                if self.order.on_boundary(ctx):
+                if order.on_boundary(ctx):
                     p /= exp(q)
             else:
                 p = avg(low, high)
+
+            first_decision = order.first_real_decision(ctx)
+            prev_was_decision = order.prev_was_decision(ctx)
                 
-            if prev_lvl == -1 or self.order.is_decision(prev_lvl):
-                skipped = self.order.skipped_decisions(prev_lvl, ctx.curr_lvl)
+            if first_decision or prev_was_decision:
+                skipped = order.decisions_on_edge(ctx)
                 p *= 2**skipped
 
-            if prev_lvl != -1 and self.order.is_decision(prev_lvl):
+            if not first_decision and prev_was_decision:
                 p *= exp(q)                
 
             return p

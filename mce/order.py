@@ -87,5 +87,19 @@ class BitOrder:
         return min(self.decision_bits, self.round_index(lvl) + 1)
 
     def on_boundary(self, ctx):
-        prev_lvl = -1 if ctx.prev_lvl is None else ctx.prev_lvl
-        return self.interval(ctx.curr_lvl) !=  self.interval(prev_lvl)
+        if self.first_real_decision(ctx):
+            return True
+        return self.interval(ctx.curr_lvl) !=  self.interval(ctx.prev_lvl)
+
+    def first_real_decision(self, ctx):
+        return ctx.prev_lvl is None
+
+    def prev_was_decision(self, ctx):
+        if self.first_real_decision(ctx):
+            return self.decisions_on_edge(ctx) > 0
+        return self.is_decision(ctx.prev_lvl)
+
+    def decisions_on_edge(self, ctx):
+        if self.first_real_decision(ctx):
+            return self.skipped_decisions(0, ctx.curr_lvl)
+        return self.skipped_decisions(ctx.prev_lvl, ctx.curr_lvl)
