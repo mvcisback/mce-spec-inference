@@ -81,3 +81,15 @@ def test_psat_mock():
     assert 0 <= psat_expected <= 1
     assert ctrl.psat() == pytest.approx(psat_expected)
 
+
+def test_trc_likelihood():
+    spec, mdp = sys1()
+    ctrl = policy(mdp, spec, horizon=3)
+    ctrl.fix_coeff(1)
+
+    sys_actions = states = 3*[{'a': (True,)}]
+    trc = mdp.encode_trc(sys_actions, states)
+    trc2 = ctrl.encode_trc(trc)
+    assert trc2 == [True, True, True]
+    
+    ctrl._likelihood(trc)

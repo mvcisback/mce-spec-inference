@@ -4,10 +4,7 @@ import aiger_bv as BV
 import aiger_coins as C
 import aiger_ptltl as PLTL
 
-from mce.bdd import to_bdd
-
-
-TIMED_INPUT_MATCHER = re.compile(r'(.*)\[\d+\]##time_(\d+)')
+from mce.bdd import to_bdd, TIMED_INPUT_MATCHER
 
 
 def test_smoke():
@@ -24,7 +21,7 @@ def test_smoke():
     for i in range(order.total_bits*order.horizon):
         t = order.time_step(i)
         var = input2var.inv[manager.var_at_level(i)]
-        action, t2 = TIMED_INPUT_MATCHER.match(var).groups()
+        action, _, t2 = TIMED_INPUT_MATCHER.match(var).groups()
         assert t == int(t2)
         decision = action in spec.inputs
         assert decision == order.is_decision(i)

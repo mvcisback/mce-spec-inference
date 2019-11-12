@@ -149,7 +149,7 @@ description = "Library for folding (or reducing) over a Reduced Ordered Binary D
 name = "fold-bdd"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.2.0"
+version = "0.2.2"
 
 [package.dependencies]
 attrs = ">=19.3,<20.0"
@@ -628,7 +628,7 @@ version = "0.6.0"
 more-itertools = "*"
 
 [metadata]
-content-hash = "7b76f5054bef67d3b93cae91641788b10618827463687d808a3ffd6c2cf3589b"
+content-hash = "94cffcdd4039f9add89ce95366b62906196eda756715c4cbd3cd611c176d4643"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -647,7 +647,7 @@ decorator = ["54c38050039232e1db4ad7375cfce6748d7b41c29e95a081c8a6d2c30364a2ce",
 entrypoints = ["589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19", "c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451"]
 execnet = ["cacb9df31c9680ec5f95553976c4da484d407e85e41c83cb812aa014f0eddc50", "d4efd397930c46415f62f8a31388d6be4f27a91d7550eb79bc64a756e0056547"]
 flake8 = ["45681a117ecc81e870cbf1262835ae4af5e7a8b08e40b944a8a6e6b895914cfb", "49356e766643ad15072a789a20915d3c91dc89fd313ccd71802303fd67e4deca"]
-fold-bdd = ["24d87387715883153a784db0c02814a4fb27adff5c7ad161305ef30e79a67cfe", "8c98ee239fd32d92cf7427f429232532a8ca0ae443fd9f8fbd8ec13edf60e24c"]
+fold-bdd = ["e817235754fcb120e88848e420e30f497231aefc14fba2d8f7df328174404cc4", "f60be18ba05a7b468d8a65c8032303a30a0664f9f58ed78d157385402e892e3f"]
 funcy = ["141950038e72bdc2d56fa82468586a1d1291b9cc9346daaaa322dffed1d1da6e", "918f333f675d9841ec7d77b9f0d5a272ed290393a33c8ef20e605847de89b1c3"]
 hypothesis = ["2dfa49672947796cf6555fe00658c2f3590018706f6bc90a3b79c157be7acb20", "5caf0d4b52cf797cfcb6bcf7fc633dd97b23beb9c07a3c90fffe444e4ebb3de3"]
 idna = ["c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407", "ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"]

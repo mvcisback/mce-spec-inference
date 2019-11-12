@@ -1,8 +1,13 @@
+import re
+
 import aiger_bv
 import aiger_bdd
 import funcy as fn
 
 from mce.order import BitOrder
+
+
+TIMED_INPUT_MATCHER = re.compile(r'(.*)\[(\d+)\]##time_(\d+)')
 
 
 def to_bdd(mdp, horizon):

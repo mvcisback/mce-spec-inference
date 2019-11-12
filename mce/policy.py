@@ -16,7 +16,7 @@ from fold_bdd import fold_path, post_order
 from scipy.optimize import brentq
 
 from mce.order import BitOrder
-from mce.bdd import to_bdd
+from mce.bdd import to_bdd, TIMED_INPUT_MATCHER
  
 
 def softmax(x, y):
@@ -108,6 +108,18 @@ class Policy:
         self.coeff = coeff
         self._fitted = True
 
+    def _encode_trc(self, trc):
+        for lvl in range(self.order.horizon*self.order.total_bits):
+            var = self.bdd.bdd.var_at_level(lvl)
+            var = self.relabels.inv[var]
+            t1 = self.order.time_step(lvl)
+
+            name, idx, t2 = TIMED_INPUT_MATCHER.match(var).groups()
+            assert t1 == int(t2)
+            yield trc[t1][name][int(idx)]
+
+    def encode_trc(self, trc):
+        return list(self._encode_trc(trc))
 
     def likelihood(self, trcs):
         return np.product(map(self._likelihood, trcs))
