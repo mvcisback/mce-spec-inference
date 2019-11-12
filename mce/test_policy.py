@@ -8,8 +8,10 @@ from numpy import logaddexp, exp, log
 from mce.policy import policy
 
 
-def sys1():
+def sys1(negate=False):
     spec = PLTL.atom('a').historically()
+    if negate:
+        spec = ~spec
     spec = BV.aig2aigbv(spec.aig)
     spec = C.circ2mdp(spec)
 
@@ -59,7 +61,16 @@ def test_smoke_policy():
     prand = ctrl.bdd.count(3) / 2**3
     assert psat(0) == pytest.approx(prand)
 
+    spec2, mdp2 = sys1(negate=True)
+    ctrl2 = policy(mdp2, spec2, horizon=3)
+    psat2 = function([ctrl2.coeff], ctrl2.psat())
 
+    # Lower bound on negagted policy.
+    for i in range(10):
+        assert psat2(1) >= 1 - psat(1)
+        assert psat(1) >= 1 - psat2(1)
+
+    
 def test_psat_mock():
     spec, mdp = sys1()
     ctrl = policy(mdp, spec, horizon=3)
@@ -69,3 +80,4 @@ def test_psat_mock():
     psat_expected = exp(1 - V0)
     assert 0 <= psat_expected <= 1
     assert ctrl.psat() == pytest.approx(psat_expected)
+
