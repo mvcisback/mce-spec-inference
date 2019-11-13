@@ -12,7 +12,7 @@ def test_smoke():
     spec = BV.aig2aigbv(spec.aig)
     spec = C.circ2mdp(spec)
     spec <<= C.coin((1, 8), name='c')
-    spec >>= C.circ2mdp(BV.sink(3, ['c']))  # HACK
+    spec >>= C.circ2mdp(BV.sink(1, ['c']))  # HACK
 
     bdd, manager, input2var, order = to_bdd(spec, horizon=3)    
 
