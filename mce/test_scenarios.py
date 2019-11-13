@@ -18,14 +18,16 @@ def sys2():
 def sys3():
     mdp = sys1()
     mdp |= C.circ2mdp(BV.identity_gate(1, 'c'))
-    mdp <<= C.coin((1, 8), name='c')
+    coin = C.coin((1, 2), name='c')
+    mdp <<= coin
 
     delay = BV.aig2aigbv(aiger.delay('c', [False]))
     delay = C.circ2mdp(delay)
 
     c = BV.atom(1, 'c', signed=False)
     a = BV.atom(1, 'a', signed=False)
-    test = C.circ2mdp((c & a).with_output('a'))
+    test = C.circ2mdp((c == a).with_output('a'))
+
 
     return mdp >> delay >> test
 
@@ -49,6 +51,10 @@ scenario1 = gen_scenario(
 
 scenario2 = gen_scenario(
     spec=SPEC2, sys=sys1(),
+)
+
+scenario_reactive = gen_scenario(
+    spec=SPEC1, sys=sys3(),
 )
 
 

@@ -3,11 +3,11 @@ from itertools import product
 import hypothesis.strategies as st
 import pytest
 import theano
-from hypothesis import given
-from numpy import logaddexp, exp, log
+from hypothesis import given, settings
+from numpy import logaddexp, exp, log, ceil
 
 from mce.policy import policy
-from mce.test_scenarios import scenario1, SCENARIOS
+from mce.test_scenarios import scenario1, scenario_reactive, SCENARIOS
 
 
 V2 = logaddexp(-1, 1)
@@ -148,3 +148,44 @@ def test_fit():
     ctrl.fit(0.8)
     assert ctrl.coeff > 1
     assert ctrl.psat() == pytest.approx(0.8)
+
+
+@settings(deadline=None)
+@given(
+    st.floats(min_value=1, max_value=1),
+    st.integers(min_value=3, max_value=3)
+)
+def test_reactive_tbl(coeff, horizon):
+    spec, mdp = scenario_reactive()
+    ctrl = policy(mdp, spec, horizon=horizon)
+    ctrl.fix_coeff(coeff)
+
+    assert len(ctrl.tbl) == 9
+
+    assert ctrl.tbl[ctrl.bdd.bdd.true] == coeff
+    assert ctrl.tbl[ctrl.bdd.bdd.false] == -coeff
+
+    lvl_map = {}
+    for node, val in ctrl.tbl.items():
+        if node in (node.bdd.false, node.bdd.true):
+            continue
+
+        lvl_map.setdefault(node.level, val)
+        assert lvl_map[node.level] == val
+
+    assert set(lvl_map.keys()) == set(range(2*horizon - 1))
+    for lvl, val in lvl_map.items():
+        if lvl % 2:
+            assert val == lvl_map[lvl + 1]
+        else: 
+            if lvl != 0:
+                paths = 2**(horizon - (lvl/2)) - 1
+                v2 = (exp(val) - exp(coeff))*exp(coeff)
+                assert v2 == pytest.approx(paths)
+
+    def expected(lvl):
+
+        return log(exp(coeff) + paths*exp(-coeff))
+
+    for lvl in range(horizon - 2):
+        pass

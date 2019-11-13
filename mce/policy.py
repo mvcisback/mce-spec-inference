@@ -23,7 +23,9 @@ from mce.utils import empirical_sat_prob
  
 
 def softmax(x, y):
-    return T.log(T.exp(x) + T.exp(y))
+    m = T.max([x, y])
+    x2, y2 = x - m, y - m
+    return T.log(T.exp(x2) + T.exp(y2)) + m
 
 
 def avg(x, y):
