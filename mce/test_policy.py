@@ -59,9 +59,10 @@ def test_psat_monotonicity(scenario):
     ctrl = policy(mdp, spec, horizon=3)
     psat = function([ctrl.coeff], ctrl.psat())
 
-    prev = 0
+    prob = 0
     for i in range(10):
-        assert prev <= psat(i)
+        prev, prob = prob, psat(i)
+        assert prev <= prob
 
 
 @given(SCENARIOS)

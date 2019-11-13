@@ -149,7 +149,7 @@ description = "Library for folding (or reducing) over a Reduced Ordered Binary D
 name = "fold-bdd"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.2.2"
+version = "0.2.3"
 
 [package.dependencies]
 attrs = ">=19.3,<20.0"
@@ -170,7 +170,7 @@ description = "A library for property based testing"
 name = "hypothesis"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-version = "4.44.1"
+version = "4.44.2"
 
 [package.dependencies]
 attrs = ">=19.2.0"
@@ -354,7 +354,7 @@ description = "Library for creating circuits that encode discrete distributions.
 name = "py-aiger-coins"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "1.2.0"
+version = "1.2.1"
 
 [package.dependencies]
 attrs = ">=19.3,<20.0"
@@ -628,7 +628,7 @@ version = "0.6.0"
 more-itertools = "*"
 
 [metadata]
-content-hash = "94cffcdd4039f9add89ce95366b62906196eda756715c4cbd3cd611c176d4643"
+content-hash = "d3b906cf86d848aeed88e2bcabba2280c8860b35727bef3a886727868a02e298"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -647,9 +647,9 @@ decorator = ["54c38050039232e1db4ad7375cfce6748d7b41c29e95a081c8a6d2c30364a2ce",
 entrypoints = ["589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19", "c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451"]
 execnet = ["cacb9df31c9680ec5f95553976c4da484d407e85e41c83cb812aa014f0eddc50", "d4efd397930c46415f62f8a31388d6be4f27a91d7550eb79bc64a756e0056547"]
 flake8 = ["45681a117ecc81e870cbf1262835ae4af5e7a8b08e40b944a8a6e6b895914cfb", "49356e766643ad15072a789a20915d3c91dc89fd313ccd71802303fd67e4deca"]
-fold-bdd = ["e817235754fcb120e88848e420e30f497231aefc14fba2d8f7df328174404cc4", "f60be18ba05a7b468d8a65c8032303a30a0664f9f58ed78d157385402e892e3f"]
+fold-bdd = ["3a795f47bb430bffb9c68ca14345985202358569f7be23b22d6244392937a325", "dee2c14a15828112ed4963bdba78d04384591605d2d5d1e1b870c37a9d9b00c4"]
 funcy = ["141950038e72bdc2d56fa82468586a1d1291b9cc9346daaaa322dffed1d1da6e", "918f333f675d9841ec7d77b9f0d5a272ed290393a33c8ef20e605847de89b1c3"]
-hypothesis = ["2dfa49672947796cf6555fe00658c2f3590018706f6bc90a3b79c157be7acb20", "5caf0d4b52cf797cfcb6bcf7fc633dd97b23beb9c07a3c90fffe444e4ebb3de3"]
+hypothesis = ["0950e663cef6fea90642996a44aa402978657dea47c8a4fb47caae335379668d", "18f35c5c4665edc3b44cabb7919b220c88e078d819b3aba447858dedf10e1e73"]
 idna = ["c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407", "ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"]
 importlib-metadata = ["aa18d7378b00b40847790e7c27e11673d7fed219354109d0e7b9e5b25dc3ad26", "d5f18a79777f3aa179c145737780282e27b508fc8fd688cb17c7a813e8bd39af"]
 mccabe = ["ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42", "dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f"]
@@ -666,7 +666,7 @@ py-aiger = ["cdeb57410177d360e305ab4a444c010bdc9f9ed7202f244d66214e0cb214e272", 
 py-aiger-bdd = ["13475f2a7b36afc3fbbcf4c5e040dacb5312821ad32c2c768e0a60d97428f333", "af2f1b1927c158d7bd458d3de5c2e1e9a30c936c4b887337f8958bdf06113d1d"]
 py-aiger-bv = ["16c960e8f97ba088e6d48c60c0a7837418b69ca35e4e82e1e830f9fb9e657d97", "c7f73cf058edfda02cfd773186ad07d4cf2a601ca9f510c72e2b594ea9c75277"]
 py-aiger-cnf = ["41aef839872ee12588bb05ba3d441289cbf080e02f71d90e0056f5024cd67992", "74b700e0e2b2015ddc5770a476c1e855dc28732ca46f3217be71e3fdcd9bb52c"]
-py-aiger-coins = ["1eca823e1c6c21adb566053082d6241a7f0b69c68d6ae4852ff7849c800b589e", "a27c0803c72491ac780b2fb57ce7633f78cb694b5f390eabb5ece5dcb7f1885d"]
+py-aiger-coins = ["474f3e2cc68bbd92e237c7685e9835ea439f432d2edea9c8b401cebbb14932ef", "799f7b92c4c2836888da69e56000f7fa6c9a6a00174c018a3125157f2e67148e"]
 py-aiger-ptltl = ["2464506f78fac96452aee1f8bbd66ff19e51428d591db4e354dee53c523a1dd4", "2c9ef6483c301c5284b45db8077cef4e46ea46f5ef03be38bd82b90f7d0a233d"]
 py-aiger-sat = ["2fbefcde1dac45e70180cd2a6922f34ef5ca50dff5bc9d44e884ccf37846af23", "c8774e7fb6b308fa59b26d99cef24e260cf747d9be0beb76c4968af9f85c6fb8"]
 pycodestyle = ["95a2219d12372f05704562a14ec30bc76b05a5b297b21a5dfe3f6fac3491ae56", "e40a936c9a450ad81df37f549d676d127b1b66000a6c500caa2b085bc0ca976c"]

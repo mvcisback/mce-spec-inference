@@ -19,6 +19,7 @@ from scipy.optimize import brentq
 
 from mce.order import BitOrder
 from mce.bdd import to_bdd, TIMED_INPUT_MATCHER
+from mce.utils import empirical_sat_prob
  
 
 def softmax(x, y):
@@ -60,7 +61,7 @@ def policy(mdp, spec, horizon, coeff="coeff"):
         return tbl, val + equiv_decision_bump
 
     tbl = post_order(bdd, merge)[0]
-    return Policy(coeff, tbl, order, bdd, orig_mdp, spec, relabels)
+    return Policy(coeff, tbl, order, bdd, orig_mdp, spec, spec_circ, relabels)
 
 
 @attr.s
@@ -71,6 +72,7 @@ class Policy:
     bdd = attr.ib()
     mdp = attr.ib()
     spec = attr.ib()
+    monitor = attr.ib()
     relabels = attr.ib()
     _fitted = attr.ib(default=False)
 
@@ -102,28 +104,28 @@ class Policy:
         return post_order(self.bdd, merge)
 
     def empirical_sat_prob(self, trcs):
-        trcs = [self.mdp.encode_trc(*v) for v in trcs]
-        circ = self.mdp.aigbv
-        name = fn.first(self.mdp.outputs)
-        n_sat = sum(circ.simulate(trc)[-1][0][name][0] for trc in trcs)
-        return n_sat / len(trcs)
+        return empirical_sat_prob(self.monitor, trcs)
 
-    def fit(self, sat_prob_or_trcs, top=100, fudge=1e-3):
+    def fit(self, sat_prob_or_trcs, top=100, fudge=1e-3, encoded_trcs=None):
         if not isinstance(sat_prob_or_trcs, float):
-            sat_prob = empirical_sat_prob(sat_prob_or_trcs)
+            sat_prob = self.empirical_sat_prob(sat_prob_or_trcs)
         else:
             sat_prob = sat_prob_or_trcs
 
         assert not self._fitted
-        sat_prob = min(sat_prob, 1 - fudge)
         f = theano.function(
             [self.coeff], self.psat() - sat_prob, on_unused_input='ignore'
         )
-        coeff = brentq(f, 0, top)
-        self._fitted = True
+        coeff = brentq(f, -top, top)
+        if coeff < 0:
+            coeff = 0
+
         self.fix_coeff(coeff)
         
         if not isinstance(sat_prob_or_trcs, float):
+            if encoded_trcs is not None:
+                return self.log_likelihood(encoded_trcs, encoded=True)
+            
             return self.log_likelihood(sat_prob_or_trcs)
 
     def fix_coeff(self, coeff):
@@ -153,7 +155,8 @@ class Policy:
     def log_likelihood(self, trcs, encoded=False):
         if not encoded:
             trcs = self.encode_trcs(trcs)
-        return sum(fn.lmap(self._log_likelihood, trcs))
+        lls = fn.lmap(self._log_likelihood, trcs)
+        return sum(lls)
 
     def _log_likelihood(self, trc):
         assert self._fitted
@@ -162,7 +165,7 @@ class Policy:
         def prob(ctx, val, acc):
             q = self.tbl[ctx.node]
             if ctx.is_leaf:
-                return acc + q
+                acc += q
             elif not order.is_decision(ctx):
                 return acc - np.log(2)  # Flip fair coin
 
@@ -177,7 +180,6 @@ class Policy:
 
             if (not first_decision) and prev_was_decision:
                 acc += q
-
             return acc
         
         return fold_path(merge=prob, bexpr=self.bdd, vals=trc, initial=0)
