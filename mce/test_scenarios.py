@@ -14,6 +14,12 @@ def sys2():
     return mdp
 
 
+def sys3():
+    mdp = sys2()
+    mdp >>= C.circ2mdp(BV.aig2aigbvsink(3, ['c']))  # HACK
+    return mdp
+
+
 SPEC1 = PLTL.atom('a').historically()
 SPEC2 = PLTL.atom(True)
 

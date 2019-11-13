@@ -1,4 +1,4 @@
-from itertools import combinations_with_replacement as combinations
+from itertools import product
 
 import hypothesis.strategies as st
 import pytest
@@ -120,12 +120,10 @@ def test_trc_likelihood():
     assert ctrl._log_likelihood(trc) == pytest.approx(l_sat)
 
     l_fail = log((1 - exp(l_sat)) / 7)
-    for trc in combinations([False, True], 3):
+    for trc in product(*(3*[[False, True]])):
         ll = ctrl._log_likelihood(trc)
-        if all(trc):
-            assert ll == pytest.approx(l_sat)
-        else:
-            assert ll == pytest.approx(l_fail)
+        expected = l_sat if all(trc) else l_fail
+        assert ll == pytest.approx(expected)
 
     sys_actions2 = states2 = 3*[{'a': (False,)}]
     demos = [(sys_actions, states), (sys_actions2, states2)]

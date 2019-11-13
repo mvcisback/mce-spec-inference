@@ -163,18 +163,21 @@ class Policy:
         order = self.order
 
         def prob(ctx, val, acc):
+            if not order.is_decision(ctx):
+                return acc - np.log(2)  # Flip fair coin
+
             q = self.tbl[ctx.node]
+            first_decision = order.first_real_decision(ctx)
+            prev_was_decision = order.prev_was_decision(ctx)
+
             if ctx.is_leaf:
                 acc += q
-            elif not order.is_decision(ctx):
-                return acc - np.log(2)  # Flip fair coin
+                if not first_decision:
+                    return acc
 
             if order.on_boundary(ctx):
                 acc -= q
             
-            first_decision = order.first_real_decision(ctx)
-            prev_was_decision = order.prev_was_decision(ctx)
-
             if first_decision or prev_was_decision:
                 acc -= order.decisions_on_edge(ctx)*np.log(2)
 
