@@ -15,10 +15,10 @@ python = "^3.7"
 theano = "^1.0"
 py-aiger-coins = {version = "^1.2.1", extras = ["sat"]}
 py-aiger-bv = "^1.2"
-py-aiger-bdd = "^0.2.3"
+py-aiger-bdd = "^0.2.6"
 attrs = "^19.3"
 funcy = "^1.13"
-fold-bdd = "^0.2.3"
+fold-bdd = "^0.3.0"
 
 [tool.poetry.dev-dependencies]
 codecov = "^2.0"

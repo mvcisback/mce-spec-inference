@@ -14,9 +14,13 @@ def to_bdd(mdp, horizon, output=None):
     circ = mdp.aigbv 
     circ >>= aiger_bv.sink(1, ['##valid'])  # TODO: handle ##valid.
     unrolled = circ.aig.unroll(horizon, only_last_outputs=True)  # HACK
+
     if output is not None:
         output = f"{output}##time_{horizon}"
-    bdd, manager, input2var = aiger_bdd.to_bdd(unrolled, output=output)
+
+    bdd, manager, input2var = aiger_bdd.to_bdd(
+        unrolled, output=output, renamer=lambda _, x: x
+    )
 
     # Force order to be causal.
     inputs = mdp.inputs

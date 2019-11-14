@@ -1,8 +1,12 @@
+from itertools import product
+
 import aiger
 import aiger_bv as BV
 import aiger_coins as C
 import aiger_ptltl as PLTL
+import funcy as fn
 import hypothesis.strategies as st
+
 
 def sys1():
     return C.circ2mdp(BV.identity_gate(1, 'a'))
@@ -18,16 +22,15 @@ def sys2():
 def sys3():
     mdp = sys1()
     mdp |= C.circ2mdp(BV.identity_gate(1, 'c'))
-    coin = C.coin((1, 2), name='c')
+    coin = (~C.coin((1, 2), name='c')).with_output('c')
     mdp <<= coin
 
-    delay = BV.aig2aigbv(aiger.delay('c', [False]))
+    delay = BV.aig2aigbv(aiger.delay('c', [True]))
     delay = C.circ2mdp(delay)
 
     c = BV.atom(1, 'c', signed=False)
     a = BV.atom(1, 'a', signed=False)
     test = C.circ2mdp((c == a).with_output('a'))
-
 
     return mdp >> delay >> test
 
@@ -58,11 +61,17 @@ scenario_reactive = gen_scenario(
 )
 
 
-SCENARIOS = st.one_of(
-    st.just(gen_scenario(spec=SPEC1, sys=sys1())),
-    st.just(gen_scenario(spec=SPEC2, sys=sys1())),
-    st.just(gen_scenario(spec=SPEC1, sys=sys2())),
-    st.just(gen_scenario(spec=SPEC2, sys=sys2())),
-    st.just(gen_scenario(spec=SPEC1, sys=sys3())),
-    st.just(gen_scenario(spec=SPEC2, sys=sys3())),
+def make_strategy(spec_sys):
+    spec, sys = spec_sys
+    return st.just(gen_scenario(spec=spec, sys=sys()))
+
+
+DET_SCENARIOS = st.one_of(
+    fn.lmap(make_strategy, product([SPEC1, SPEC2], [sys1, sys2]))
 )
+
+NOT_DET_SCENARIOS = st.one_of(
+    fn.lmap(make_strategy, product([SPEC1, SPEC2], [sys3]))
+)
+
+SCENARIOS = st.one_of(DET_SCENARIOS, NOT_DET_SCENARIOS)

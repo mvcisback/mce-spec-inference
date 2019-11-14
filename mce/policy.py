@@ -32,6 +32,12 @@ def avg(x, y):
     return (x + y) / 2
 
 
+def function(*args, **kwargs):
+    kwargs['on_unused_input'] = 'ignore'
+    kwargs['mode'] = "FAST_COMPILE"
+    return theano.function(*args, **kwargs)
+
+
 def policy(mdp, spec, horizon, coeff="coeff"):
     orig_mdp = mdp
     spec_circ = BV.aig2aigbv(spec.aig)
@@ -48,16 +54,19 @@ def policy(mdp, spec, horizon, coeff="coeff"):
     
     coeff = T.dscalar(coeff)
     def merge(ctx, low, high):
+        negated = ctx.path_negated
         if ctx.is_leaf:
             val = coeff*(2*ctx.node_val - 1)
-            tbl = {ctx.node: val}
+            if negated:
+                val *= -1
+            tbl = {(ctx.node, negated): val}
         else:
             (tbl_l, val_l), (tbl_r, val_r) = low, high
             tbl = fn.merge(tbl_l, tbl_r)
 
             op = softmax if order.is_decision(ctx) else avg
             val = op(val_l, val_r)
-            tbl[ctx.node] = val
+            tbl[ctx.node, negated] = val
 
         equiv_decision_bump = order.decisions_on_edge(ctx)*T.log(2)
         return tbl, val + equiv_decision_bump
@@ -78,12 +87,15 @@ class Policy:
     relabels = attr.ib()
     _fitted = attr.ib(default=False)
 
+    def value(self, ctx):
+        return self.tbl[ctx.node, ctx.path_negated]
+
     def psat(self):
         exp = np.exp if self._fitted else T.exp
         const = (lambda x: x) if self._fitted else T.constant
         order = self.order
         def merge(ctx, low, high):
-            q = self.tbl[ctx.node]
+            q = self.value(ctx)
             if ctx.is_leaf:
                 p = const(int(ctx.node_val))
             elif not order.is_decision(ctx):
@@ -168,7 +180,7 @@ class Policy:
             if not order.is_decision(ctx):
                 return acc - np.log(2)  # Flip fair coin
 
-            q = self.tbl[ctx.node]
+            q = self.value(ctx)
             first_decision = order.first_real_decision(ctx)
             prev_was_decision = order.prev_was_decision(ctx)
 
