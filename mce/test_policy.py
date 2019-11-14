@@ -170,3 +170,43 @@ def test_reactive_tbl(coeff, horizon):
             v2 = (exp(val) - exp(coeff))*exp(coeff)
             assert v2 == pytest.approx(paths)
 
+
+@settings(deadline=None, max_examples=3)
+@given(
+    st.floats(min_value=1, max_value=4),
+    st.integers(min_value=3, max_value=6)
+)
+def test_reactive_psat(coeff, horizon):
+    spec, mdp = scenario_reactive()
+    ctrl = policy(mdp, spec, horizon=horizon)
+    breakpoint()
+    ctrl.fix_coeff(coeff)
+
+    assert ctrl.tbl[ctrl.bdd.bdd.true, False] == coeff
+    assert ctrl.tbl[ctrl.bdd.bdd.true, True] == -coeff
+    assert ctrl.tbl[ctrl.bdd.bdd.false, False] == -coeff
+    assert ctrl.tbl[ctrl.bdd.bdd.false, True] == coeff
+
+    lvl_map = {}
+    for (node, negated), val in ctrl.tbl.items():
+        if node in (node.bdd.false, node.bdd.true):
+            continue
+
+        lvl_map.setdefault(node.level, val)
+        assert lvl_map[node.level] == val
+
+    assert set(lvl_map.keys()) == set(range(2*horizon - 1))
+
+
+    for lvl, val in lvl_map.items():
+        if lvl % 2:
+            assert val == lvl_map[lvl + 1]
+        else: 
+            paths = 2**(horizon - (lvl/2)) - 1
+            v2 = (exp(val) - exp(coeff))*exp(coeff)
+            assert v2 == pytest.approx(paths)
+
+    sat_prob = ctrl.psat()
+    x = exp(2*coeff)
+    expect_sat_prob = 1 / (1 + (2**horizon - 1)/ x)
+    assert sat_prob == pytest.approx(expect_sat_prob)

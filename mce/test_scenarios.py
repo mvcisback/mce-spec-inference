@@ -21,15 +21,13 @@ def sys2():
 
 def sys3():
     mdp = sys1()
-    mdp |= C.circ2mdp(BV.identity_gate(1, 'c'))
+    mdp |= C.circ2mdp(BV.tee(1, {'c': ['c', 'c_next']}))
     coin = (~C.coin((1, 2), name='c')).with_output('c')
     mdp <<= coin
 
-    delay = BV.aig2aigbv(aiger.delay('c', [True]))
+    delay = BV.aig2aigbv(aiger.delay(['c'], [True]))
     delay = C.circ2mdp(delay)
 
-    c = BV.atom(1, 'c', signed=False)
-    a = BV.atom(1, 'a', signed=False)
     return mdp >> delay
 
 

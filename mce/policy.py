@@ -34,7 +34,7 @@ def avg(x, y):
 
 def function(*args, **kwargs):
     kwargs['on_unused_input'] = 'ignore'
-    kwargs['mode'] = "FAST_COMPILE"
+    kwargs['mode'] = theano.Mode(optimizer="stabilize")
     return theano.function(*args, **kwargs)
 
 
@@ -46,7 +46,7 @@ def policy(mdp, spec, horizon, coeff="coeff"):
     for out, size in orig_mdp._aigbv.omap.items():
         if out not in mdp.outputs:
             continue
-        mdp >>= C.circ2mdp(BV.sink(size, out))
+        mdp >>= C.circ2mdp(BV.sink(size, [out]))
     assert len(mdp.outputs) == 1
 
     output = spec_circ.omap[spec.output][0]
@@ -127,10 +127,13 @@ class Policy:
             sat_prob = sat_prob_or_trcs
 
         assert not self._fitted
-        f = theano.function(
-            [self.coeff], self.psat() - sat_prob, on_unused_input='ignore'
-        )
-        coeff = brentq(f, -top, top)
+        f = function([self.coeff], self.psat() - sat_prob)
+        if f(-top) > 0:
+            coeff = 0
+        elif f(top) < 0 :
+            coeff = top
+        else:
+            coeff = brentq(f, -top, top)
         if coeff < 0:
             coeff = 0
 
@@ -144,7 +147,7 @@ class Policy:
 
     def fix_coeff(self, coeff):
         for k, val in self.tbl.items():
-            self.tbl[k] = theano.function([self.coeff], val)(coeff)
+            self.tbl[k] = function([self.coeff], val)(coeff)
 
         self.coeff = coeff
         self._fitted = True
@@ -178,7 +181,8 @@ class Policy:
 
         def prob(ctx, val, acc):
             if not order.is_decision(ctx):
-                return acc - np.log(2)  # Flip fair coin
+                # TODO: Document this!
+                return acc  # Only Want Decision Likelihoods            
 
             q = self.value(ctx)
             first_decision = order.first_real_decision(ctx)
