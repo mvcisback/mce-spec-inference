@@ -30,13 +30,12 @@ def sys3():
 
     c = BV.atom(1, 'c', signed=False)
     a = BV.atom(1, 'a', signed=False)
-    test = C.circ2mdp((c == a).with_output('a'))
-
-    return mdp >> delay >> test
+    return mdp >> delay
 
 
 SPEC1 = PLTL.atom('a').historically()
 SPEC2 = PLTL.atom(True)
+SPEC3 = (PLTL.atom('a') == PLTL.atom('c')).historically()
 
 
 def gen_scenario(spec, sys):
@@ -57,7 +56,7 @@ scenario2 = gen_scenario(
 )
 
 scenario_reactive = gen_scenario(
-    spec=SPEC1, sys=sys3(),
+    spec=SPEC3, sys=sys3(),
 )
 
 
@@ -71,7 +70,7 @@ DET_SCENARIOS = st.one_of(
 )
 
 NOT_DET_SCENARIOS = st.one_of(
-    fn.lmap(make_strategy, product([SPEC1, SPEC2], [sys3]))
+    fn.lmap(make_strategy, product([SPEC3, SPEC2], [sys3]))
 )
 
 SCENARIOS = st.one_of(DET_SCENARIOS, NOT_DET_SCENARIOS)
