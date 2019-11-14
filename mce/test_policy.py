@@ -79,7 +79,7 @@ def test_coeff_zero(scenario):
     ctrl2 = policy(mdp2, spec2, horizon=3)
     psat2 = function([ctrl2.coeff], ctrl2.psat())
 
-    assert psat(0) in (0, 1) or psat2(0) == psat(0)
+    assert psat(0) in (0, 1) or psat2(0) == pytest.approx(1 - psat(0))
 
     
 def test_psat_mock():
