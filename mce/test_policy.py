@@ -179,7 +179,6 @@ def test_reactive_tbl(coeff, horizon):
 def test_reactive_psat(coeff, horizon):
     spec, mdp = scenario_reactive()
     ctrl = policy(mdp, spec, horizon=horizon)
-    breakpoint()
     ctrl.fix_coeff(coeff)
 
     assert ctrl.tbl[ctrl.bdd.bdd.true, False] == coeff

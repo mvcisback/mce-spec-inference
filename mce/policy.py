@@ -94,10 +94,13 @@ class Policy:
         exp = np.exp if self._fitted else T.exp
         const = (lambda x: x) if self._fitted else T.constant
         order = self.order
+
         def merge(ctx, low, high):
             q = self.value(ctx)
             if ctx.is_leaf:
                 p = const(int(ctx.node_val))
+                if ctx.path_negated:
+                    p = 1 - p
             elif not order.is_decision(ctx):
                 p = avg(low, high)
             else:
