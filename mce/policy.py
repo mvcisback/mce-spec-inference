@@ -47,6 +47,7 @@ def policy(mdp, spec, horizon, coeff="coeff"):
         if out not in mdp.outputs:
             continue
         mdp >>= C.circ2mdp(BV.sink(size, out))
+    assert len(mdp.outputs) == 1
 
     output = spec_circ.omap[spec.output][0]
 
@@ -65,8 +66,7 @@ def policy(mdp, spec, horizon, coeff="coeff"):
             tbl = fn.merge(tbl_l, tbl_r)
 
             op = softmax if order.is_decision(ctx) else avg
-            val = op(val_l, val_r)
-            tbl[ctx.node, negated] = val
+            tbl[ctx.node, negated] = val = op(val_l, val_r)
 
         equiv_decision_bump = order.decisions_on_edge(ctx)*T.log(2)
         return tbl, val + equiv_decision_bump
