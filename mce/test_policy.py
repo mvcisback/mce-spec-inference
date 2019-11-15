@@ -137,7 +137,7 @@ def test_fit():
     assert ctrl.psat() == pytest.approx(0.8)
 
 
-def test_reactive_psat(coeff=1, horizon=3):
+def test_reactive_psat(coeff=2, horizon=3):
     spec, mdp = scenario_reactive()
     ctrl = policy(mdp, spec, horizon=horizon)
     ctrl.fix_coeff(coeff)
@@ -167,6 +167,7 @@ def test_reactive_psat(coeff=1, horizon=3):
             assert val == pytest.approx(expected)
 
     sat_prob = ctrl.psat()
+    log_prob = pytest.approx(ctrl.psat(return_log=True))
     x = exp(2*coeff)
     expect_sat_prob = 1 / (1 + (2**horizon - 1)/ x)
     assert sat_prob == pytest.approx(expect_sat_prob)

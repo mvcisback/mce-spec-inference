@@ -22,12 +22,6 @@ from mce.bdd import to_bdd, TIMED_INPUT_MATCHER
 from mce.utils import empirical_sat_prob
  
 
-def softmax(x, y):
-    m = T.max([x, y])
-    x2, y2 = x - m, y - m
-    return T.log(T.exp(x2) + T.exp(y2)) + m
-
-
 def avg(x, y):
     return (x + y) / 2
 
@@ -97,35 +91,44 @@ class Policy:
         return self.tbl2[ctx.node, ctx.path_negated]
 
 
-    def psat(self):
+    def psat(self, return_log=False):
+        log = np.log if self._fitted else T.log
         exp = np.exp if self._fitted else T.exp
         const = (lambda x: x) if self._fitted else T.constant
         order = self.order
+        max = np.max if self._fitted else T.max
+
+        def softmax(x, y):
+            m = max([x, y])
+            x2, y2 = x - m, y - m
+            return log(exp(x2) + exp(y2)) + m
 
         def merge(ctx, low, high):
-            q = self.value(ctx)
+            q = self.value2(ctx)
             if ctx.is_leaf:
-                p = const(int(ctx.node_val))
-                if ctx.path_negated:
-                    p = 1 - p
-            elif not order.is_decision(ctx):
-                p = avg(low, high)
+                l = 0 if ctx.node_val ^ ctx.path_negated else -float('inf')
+                l = const(l)
             else:
-                p = (low + high) / (int(order.on_boundary(ctx))*exp(q))
+                l = softmax(low, high)
+                if not order.is_decision(ctx):
+                    l -= log(2)
+                elif order.on_boundary(ctx):
+                    l -= log(q)
 
             first_decision = order.first_real_decision(ctx)
             prev_was_decision = order.prev_was_decision(ctx)
                 
             if not first_decision and prev_was_decision:
                 skipped = order.decisions_on_edge(ctx)
-                p *= 2**skipped
+                l += skipped*log(2)
 
             if not first_decision and prev_was_decision:
-                p *= exp(q)                
+                l += log(q)
 
-            return p
+            return l
         
-        return post_order(self.bdd, merge)
+        val = post_order(self.bdd, merge)
+        return val if return_log else exp(val)
 
     def empirical_sat_prob(self, trcs):
         return empirical_sat_prob(self.monitor, trcs)
