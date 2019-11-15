@@ -103,10 +103,10 @@ def test_trc_likelihood():
     trc = ctrl.encode_trc(sys_actions, states)
     assert trc == [True, True, True]
     
-    l_sat = 1 - V0
+    l_sat = 1 - log(exp(1) + 7*exp(-1))
     assert ctrl._log_likelihood(trc) == pytest.approx(l_sat)
 
-    l_fail = log((1 - exp(l_sat)) / 7)
+    l_fail = -1 - log(exp(1) + 7*exp(-1))
     for trc in product(*(3*[[False, True]])):
         ll = ctrl._log_likelihood(trc)
         expected = l_sat if all(trc) else l_fail

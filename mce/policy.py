@@ -193,27 +193,15 @@ class Policy:
         assert self._fitted
         order = self.order
 
-        def prob(ctx, val, acc):
+        def log_prob(ctx, val, acc):
             q = self.value(ctx)
-            first_decision = order.first_real_decision(ctx)
-            prev_was_decision = order.prev_was_decision(ctx)
+
+            if order.first_real_decision(ctx):
+                acc -= q
 
             if ctx.is_leaf:
                 acc += q
-                if not first_decision:
-                    return acc
-            elif not order.is_decision(ctx):
-                # TODO: Document this!
-                return acc  # Only Want Decision Likelihoods
 
-            if order.on_boundary(ctx):
-                acc -= q
-            
-            if first_decision or prev_was_decision:
-                acc -= order.decisions_on_edge(ctx)*np.log(2)
-
-            if (not first_decision) and prev_was_decision:
-                acc += q
             return acc
         
-        return fold_path(merge=prob, bexpr=self.bdd, vals=trc, initial=0)
+        return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=0)
