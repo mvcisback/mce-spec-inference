@@ -32,6 +32,30 @@ def function(*args, **kwargs):
     return theano.function(*args, **kwargs)
 
 
+def make_tbl(bdd, order, coeff):
+    base1 = T.exp(coeff)
+    base2 = T.exp(-coeff)
+
+    def merge(ctx, low, high):
+        negated = ctx.path_negated
+        if ctx.is_leaf:
+            val = base1 if ctx.node_val ^ negated else base2
+            tbl2 = {(ctx.node, negated): val}
+        else:
+            (tbl2_l, val_l), (tbl2_r, val_r) = low, high
+            tbl2 = fn.merge(tbl2_l, tbl2_r)
+            
+            decision = order.is_decision(ctx)
+            val = (val_l + val_r) if decision else T.sqrt(val_l*val_r)
+            tbl2[ctx.node, negated] = val
+
+        val *= 2**order.decisions_on_edge(ctx)
+        return tbl2, val
+
+    tbl2, _ = post_order(bdd, merge)
+    return tbl2
+
+
 def policy(mdp, spec, horizon, coeff="coeff"):
     orig_mdp = mdp
     if not isinstance(spec, BV.AIGBV):
@@ -54,26 +78,8 @@ def policy(mdp, spec, horizon, coeff="coeff"):
     bdd, _, relabels, order = to_bdd(mdp, horizon, output=output)
 
     coeff = T.dscalar(coeff)
-    base1 = T.exp(coeff)
-    base2 = T.exp(-coeff)
-    def merge(ctx, low, high):
-        coeff2 = coeff
-        negated = ctx.path_negated
-        if ctx.is_leaf:
-            val = base1 if ctx.node_val ^ negated else base2
-            tbl2 = {(ctx.node, negated): val}
-        else:
-            (tbl2_l, val_l), (tbl2_r, val_r) = low, high
-            tbl2 = fn.merge(tbl2_l, tbl2_r)
-            
-            decision = order.is_decision(ctx)
-            val = (val_l + val_r) if decision else T.sqrt(val_l*val_r)
-            tbl2[ctx.node, negated] = val
+    tbl2 = make_tbl(bdd, order, coeff)
 
-        val *= 2**order.decisions_on_edge(ctx)
-        return tbl2, val
-
-    tbl2, _ = post_order(bdd, merge)
     return Policy(coeff, tbl2, order, bdd, orig_mdp, spec, spec_circ, relabels)
 
 
