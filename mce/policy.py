@@ -34,7 +34,7 @@ def avg(x, y):
 
 def function(*args, **kwargs):
     kwargs['on_unused_input'] = 'ignore'
-    kwargs['mode'] = theano.Mode(optimizer="stabilize")
+    kwargs['mode'] = "FAST_COMPILE" # theano.Mode(optimizer="stabilize")a
     return theano.function(*args, **kwargs)
 
 
@@ -91,7 +91,10 @@ class Policy:
 
     def value(self, ctx):
         op = np.log if self._fitted else T.log
-        return op(self.tbl2[ctx.node, ctx.path_negated])
+        return op(self.value2(ctx))
+
+    def value2(self, ctx):
+        return self.tbl2[ctx.node, ctx.path_negated]
 
 
     def psat(self):
