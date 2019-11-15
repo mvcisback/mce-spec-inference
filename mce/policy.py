@@ -191,17 +191,11 @@ class Policy:
 
     def _log_likelihood(self, trc):
         assert self._fitted
-        order = self.order
+
+        def delta(ctx):
+            return ctx.is_leaf - self.order.first_real_decision(ctx)
 
         def log_prob(ctx, val, acc):
-            q = self.value(ctx)
-
-            if order.first_real_decision(ctx):
-                acc -= q
-
-            if ctx.is_leaf:
-                acc += q
-
-            return acc
+            return acc + delta(ctx) * self.value(ctx)
         
         return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=0)
