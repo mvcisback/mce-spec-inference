@@ -2,8 +2,8 @@ from mce.policy import policy
 
 
 def spec_mle(mdp, demos, specs, top=100):
-    horizon = len(demos[0])
-    assert all(len(demo) == horizon for demo in demos)
+    horizon = len(demos[0][0])
+    assert all(len(demo[0]) == horizon for demo in demos)
 
     spec2score = {}
     best_spec = specs[0]

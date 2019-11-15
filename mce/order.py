@@ -90,5 +90,5 @@ class BitOrder:
         return self.is_decision(ctx.prev_lvl)
 
     def decisions_on_edge(self, ctx):
-        prev_lvl = 0 if self.first_real_decision(ctx) else ctx.prev_lvl
+        prev_lvl = -1 if self.first_real_decision(ctx) else ctx.prev_lvl
         return self.skipped_decisions(prev_lvl, ctx.curr_lvl)

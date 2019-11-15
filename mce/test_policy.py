@@ -3,6 +3,7 @@ from itertools import product
 import hypothesis.strategies as st
 import pytest
 import theano
+import theano.tensor as T
 from hypothesis import given, settings
 from numpy import logaddexp, exp, log, ceil
 
@@ -18,17 +19,17 @@ V0 = logaddexp(2*log(2) - 1, V1)
 
 def function(*args, **kwargs):
     kwargs['on_unused_input'] = 'ignore'
+    kwargs['mode'] = 'FAST_COMPILE'
     return theano.function(*args, **kwargs)
 
 def test_smoke_policy():
     spec, mdp = scenario1()
 
     ctrl = policy(mdp, spec, horizon=3)
-    assert len(ctrl.tbl) == 5
+    assert len(ctrl.tbl2) == 5
 
-
-    for (node, _), val in ctrl.tbl.items():
-        f = function([ctrl.coeff], val)
+    for (node, _), val in ctrl.tbl2.items():
+        f = function([ctrl.coeff], T.log(val))
 
         if node.var is None:
             expected = 2*int(node == ctrl.bdd.bdd.true) - 1
@@ -136,23 +137,18 @@ def test_fit():
     assert ctrl.psat() == pytest.approx(0.8)
 
 
-@settings(deadline=None, max_examples=3)
-@given(
-    st.floats(min_value=1, max_value=4),
-    st.integers(min_value=3, max_value=6)
-)
-def test_reactive_tbl(coeff, horizon):
+def test_reactive_psat(coeff=1, horizon=3):
     spec, mdp = scenario_reactive()
     ctrl = policy(mdp, spec, horizon=horizon)
     ctrl.fix_coeff(coeff)
 
-    assert ctrl.tbl[ctrl.bdd.bdd.true, False] == coeff
-    assert ctrl.tbl[ctrl.bdd.bdd.true, True] == -coeff
-    assert ctrl.tbl[ctrl.bdd.bdd.false, False] == -coeff
-    assert ctrl.tbl[ctrl.bdd.bdd.false, True] == coeff
+    assert ctrl.tbl2[ctrl.bdd.bdd.true, False] == exp(coeff)
+    assert ctrl.tbl2[ctrl.bdd.bdd.true, True] == exp(-coeff)
+    assert ctrl.tbl2[ctrl.bdd.bdd.false, False] == exp(-coeff)
+    assert ctrl.tbl2[ctrl.bdd.bdd.false, True] == exp(coeff)
 
     lvl_map = {}
-    for (node, negated), val in ctrl.tbl.items():
+    for (node, negated), val in ctrl.tbl2.items():
         if node in (node.bdd.false, node.bdd.true):
             continue
 
@@ -167,43 +163,8 @@ def test_reactive_tbl(coeff, horizon):
             assert val == lvl_map[lvl + 1]
         else: 
             paths = 2**(horizon - (lvl/2)) - 1
-            v2 = (exp(val) - exp(coeff))*exp(coeff)
-            assert v2 == pytest.approx(paths)
-
-
-@settings(deadline=None, max_examples=3)
-@given(
-    st.floats(min_value=1, max_value=4),
-    st.integers(min_value=3, max_value=6)
-)
-def test_reactive_psat(coeff, horizon):
-    spec, mdp = scenario_reactive()
-    ctrl = policy(mdp, spec, horizon=horizon)
-    ctrl.fix_coeff(coeff)
-
-    assert ctrl.tbl[ctrl.bdd.bdd.true, False] == coeff
-    assert ctrl.tbl[ctrl.bdd.bdd.true, True] == -coeff
-    assert ctrl.tbl[ctrl.bdd.bdd.false, False] == -coeff
-    assert ctrl.tbl[ctrl.bdd.bdd.false, True] == coeff
-
-    lvl_map = {}
-    for (node, negated), val in ctrl.tbl.items():
-        if node in (node.bdd.false, node.bdd.true):
-            continue
-
-        lvl_map.setdefault(node.level, val)
-        assert lvl_map[node.level] == val
-
-    assert set(lvl_map.keys()) == set(range(2*horizon - 1))
-
-
-    for lvl, val in lvl_map.items():
-        if lvl % 2:
-            assert val == lvl_map[lvl + 1]
-        else: 
-            paths = 2**(horizon - (lvl/2)) - 1
-            v2 = (exp(val) - exp(coeff))*exp(coeff)
-            assert v2 == pytest.approx(paths)
+            expected = exp(coeff) + paths*exp(-coeff)
+            assert val == pytest.approx(expected)
 
     sat_prob = ctrl.psat()
     x = exp(2*coeff)

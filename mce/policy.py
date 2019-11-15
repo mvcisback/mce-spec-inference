@@ -52,33 +52,35 @@ def policy(mdp, spec, horizon, coeff="coeff"):
     output = spec_circ.omap[spec.output][0]
 
     bdd, _, relabels, order = to_bdd(mdp, horizon, output=output)
-    
+
     coeff = T.dscalar(coeff)
+    base1 = T.exp(coeff)
+    base2 = T.exp(-coeff)
     def merge(ctx, low, high):
+        coeff2 = coeff
         negated = ctx.path_negated
         if ctx.is_leaf:
-            val = coeff*(2*ctx.node_val - 1)
-            if negated:
-                val *= -1
-            tbl = {(ctx.node, negated): val}
+            val = base1 if ctx.node_val ^ negated else base2
+            tbl2 = {(ctx.node, negated): val}
         else:
-            (tbl_l, val_l), (tbl_r, val_r) = low, high
-            tbl = fn.merge(tbl_l, tbl_r)
+            (tbl2_l, val_l), (tbl2_r, val_r) = low, high
+            tbl2 = fn.merge(tbl2_l, tbl2_r)
+            
+            decision = order.is_decision(ctx)
+            val = (val_l + val_r) if decision else T.sqrt(val_l*val_r)
+            tbl2[ctx.node, negated] = val
 
-            op = softmax if order.is_decision(ctx) else avg
-            tbl[ctx.node, negated] = val = op(val_l, val_r)
+        val *= 2**order.decisions_on_edge(ctx)
+        return tbl2, val
 
-        equiv_decision_bump = order.decisions_on_edge(ctx)*T.log(2)
-        return tbl, val + equiv_decision_bump
-
-    tbl = post_order(bdd, merge)[0]
-    return Policy(coeff, tbl, order, bdd, orig_mdp, spec, spec_circ, relabels)
+    tbl2, _ = post_order(bdd, merge)
+    return Policy(coeff, tbl2, order, bdd, orig_mdp, spec, spec_circ, relabels)
 
 
 @attr.s
 class Policy:
     coeff = attr.ib()
-    tbl = attr.ib()
+    tbl2 = attr.ib()
     order = attr.ib()
     bdd = attr.ib()
     mdp = attr.ib()
@@ -88,7 +90,9 @@ class Policy:
     _fitted = attr.ib(default=False)
 
     def value(self, ctx):
-        return self.tbl[ctx.node, ctx.path_negated]
+        op = np.log if self._fitted else T.log
+        return op(self.tbl2[ctx.node, ctx.path_negated])
+
 
     def psat(self):
         exp = np.exp if self._fitted else T.exp
@@ -149,8 +153,8 @@ class Policy:
             return self.log_likelihood(sat_prob_or_trcs)
 
     def fix_coeff(self, coeff):
-        for k, val in self.tbl.items():
-            self.tbl[k] = function([self.coeff], val)(coeff)
+        for k, val in self.tbl2.items():
+            self.tbl2[k] = function([self.coeff], val)(coeff)
 
         self.coeff = coeff
         self._fitted = True
@@ -175,6 +179,7 @@ class Policy:
     def log_likelihood(self, trcs, encoded=False):
         if not encoded:
             trcs = self.encode_trcs(trcs)
+
         lls = fn.lmap(self._log_likelihood, trcs)
         return sum(lls)
 
@@ -183,10 +188,6 @@ class Policy:
         order = self.order
 
         def prob(ctx, val, acc):
-            if not order.is_decision(ctx):
-                # TODO: Document this!
-                return acc  # Only Want Decision Likelihoods            
-
             q = self.value(ctx)
             first_decision = order.first_real_decision(ctx)
             prev_was_decision = order.prev_was_decision(ctx)
@@ -195,6 +196,9 @@ class Policy:
                 acc += q
                 if not first_decision:
                     return acc
+            elif not order.is_decision(ctx):
+                # TODO: Document this!
+                return acc  # Only Want Decision Likelihoods
 
             if order.on_boundary(ctx):
                 acc -= q

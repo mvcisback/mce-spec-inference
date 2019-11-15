@@ -77,8 +77,8 @@ def create_demos2(n):
 
 
 SPECS2 = [
-    SPEC3,   # Historically a
-    ~SPEC3,  # Once ~a
+    SPEC3,   # Historically a = c
+    ~SPEC3,  # Once a != c
     SPEC2,   # True
     ~SPEC2   # False
 ]
