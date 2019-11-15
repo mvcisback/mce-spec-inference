@@ -34,7 +34,13 @@ def function(*args, **kwargs):
 
 def policy(mdp, spec, horizon, coeff="coeff"):
     orig_mdp = mdp
-    spec_circ = BV.aig2aigbv(spec.aig)
+    if not isinstance(spec, BV.AIGBV):
+        spec_circ = BV.aig2aigbv(spec.aig)
+    else:
+        spec_circ = spec
+
+    assert len(spec_circ.outputs)
+
     mdp >>= C.circ2mdp(spec_circ)
     # HACK. TODO fix
     for out, size in orig_mdp._aigbv.omap.items():
@@ -43,7 +49,7 @@ def policy(mdp, spec, horizon, coeff="coeff"):
         mdp >>= C.circ2mdp(BV.sink(size, [out]))
     assert len(mdp.outputs) == 1
 
-    output = spec_circ.omap[spec.output][0]
+    output = spec_circ.omap[fn.first(spec_circ.outputs)][0]
 
     bdd, _, relabels, order = to_bdd(mdp, horizon, output=output)
 
