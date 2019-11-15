@@ -18,32 +18,29 @@ def to_bdd(mdp, horizon, output=None):
     if output is not None:
         output = f"{output}##time_{horizon}"
 
+    inputs, env_inputs = mdp.inputs, circ.inputs - mdp.inputs
+    imap = circ.imap
+
+    def causal_order():
+
+        def flattened(t):
+            def fmt(k):
+                idxs = range(imap[k].size)
+                return [f"{k}[{i}]##time_{t}" for i in idxs]
+
+            actions = fn.lmapcat(fmt, inputs)
+            coin_flips = fn.lmapcat(fmt, env_inputs)
+            return actions + coin_flips
+
+        unrolled_inputs = fn.lmapcat(flattened, range(horizon))
+        return {k: i for i, k in enumerate(unrolled_inputs)}
+
     bdd, manager, input2var = aiger_bdd.to_bdd(
-        unrolled, output=output, renamer=lambda _, x: x
+        unrolled, output=output, renamer=lambda _, x: x, levels=causal_order()
     )
 
-    # Force order to be causal.
-    inputs = mdp.inputs
-    env_inputs = circ.inputs - mdp.inputs
+    def count_bits(inputs):
+        return sum(imap[i].size for i in inputs)
 
-    imap = circ.imap
-    def relabeled(t):
-        def fmt(k):
-            idxs = range(imap[k].size)
-            return [
-                input2var[f"{k}[{i}]##time_{t}"] for i in idxs
-            ]
-        
-        actions = fn.lmapcat(fmt, inputs)
-        coin_flips = fn.lmapcat(fmt, env_inputs)
-        return actions + coin_flips
-
-    unrolled_inputs = fn.lmapcat(relabeled, range(horizon))
-    levels = {k: i for i, k in enumerate(unrolled_inputs)}
-    manager.reorder(levels)
-    manager.configure(reordering=False)
-
-    dbits = sum(imap[i].size for i in inputs)
-    cbits = sum(imap[i].size for i in env_inputs)
-    order = BitOrder(dbits, cbits, horizon)
+    order = BitOrder(count_bits(inputs), count_bits(env_inputs), horizon)
     return bdd, manager, input2var, order
