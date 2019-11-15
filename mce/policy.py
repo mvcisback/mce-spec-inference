@@ -186,8 +186,7 @@ class Policy:
         if not encoded:
             trcs = self.encode_trcs(trcs)
 
-        lls = fn.lmap(self._log_likelihood, trcs)
-        return sum(lls)
+        return sum(fn.map(self._log_likelihood, trcs))
 
     def _log_likelihood(self, trc):
         assert self._fitted
@@ -195,7 +194,10 @@ class Policy:
         def delta(ctx):
             return ctx.is_leaf - self.order.first_real_decision(ctx)
 
+        def decision_entropy(ctx):
+            return np.log(2)*self.order.decisions_on_edge(ctx)
+
         def log_prob(ctx, val, acc):
-            return acc + delta(ctx) * self.value(ctx)
+            return acc + delta(ctx) * self.value(ctx) - decision_entropy(ctx)
         
         return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=0)

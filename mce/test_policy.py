@@ -109,13 +109,13 @@ def test_trc_likelihood():
     l_fail = -1 - log(exp(1) + 7*exp(-1))
     for trc in product(*(3*[[False, True]])):
         ll = ctrl._log_likelihood(trc)
-        expected = l_sat if all(trc) else l_fail
+        expected = l_sat if all(trc) else l_fail - (2 - trc.index(False))*log(2)
         assert ll == pytest.approx(expected)
 
     sys_actions2 = states2 = 3*[{'a': (False,)}]
     demos = [(sys_actions, states), (sys_actions2, states2)]
     l_demo = ctrl.log_likelihood(demos)
-    assert l_demo == pytest.approx(l_fail + l_sat)
+    assert l_demo == pytest.approx(l_fail - 2*log(2) + l_sat)
 
 
 def test_empierical_sat_prob():
