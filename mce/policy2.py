@@ -81,7 +81,7 @@ class PolicyTable:
 
         def log_prob(ctx, val, acc):
             return acc \
-                + delta(ctx) * self.value(ctx) \
+                + delta(ctx) * self[ctx] \
                 - self.order.decision_entropy(ctx)
         
         return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=0)
