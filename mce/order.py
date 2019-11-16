@@ -2,6 +2,7 @@ from math import log
 from typing import Tuple
 
 import attr
+import numpy as np
 
 
 @attr.s(frozen=True, auto_attribs=True)
@@ -92,3 +93,6 @@ class BitOrder:
     def decisions_on_edge(self, ctx):
         prev_lvl = -1 if self.first_real_decision(ctx) else ctx.prev_lvl
         return self.skipped_decisions(prev_lvl, ctx.curr_lvl)
+
+    def decision_entropy(self, ctx):
+        return np.log(2)*self.decisions_on_edge(ctx)

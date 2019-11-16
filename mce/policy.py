@@ -28,7 +28,7 @@ def avg(x, y):
 
 def function(*args, **kwargs):
     kwargs['on_unused_input'] = 'ignore'
-    kwargs['mode'] = "FAST_COMPILE" # theano.Mode(optimizer="stabilize")a
+    kwargs['mode'] = theano.Mode(optimizer="stabilize")
     return theano.function(*args, **kwargs)
 
 
