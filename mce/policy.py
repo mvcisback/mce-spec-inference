@@ -207,9 +207,11 @@ class Policy:
             return ctx.is_leaf - self.order.first_real_decision(ctx)
 
         def decision_entropy(ctx):
-            return np.log(2)*self.order.decisions_on_edge(ctx)
+            return self.order.decision_entropy(ctx)
 
         def log_prob(ctx, val, acc):
-            return acc + delta(ctx) * self.value(ctx) - decision_entropy(ctx)
+            return acc + \
+                delta(ctx) * self.value(ctx) \
+                - decision_entropy(ctx)
         
         return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=0)

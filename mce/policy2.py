@@ -4,7 +4,7 @@ from typing import TypeVar, Tuple
 import attr
 import funcy as fn
 import numpy as np
-from fold_bdd import post_order
+from fold_bdd import fold_path, post_order
 from fold_bdd.folds import Context
 from pyrsistent import pmap
 from pyrsistent.typing import PMap
@@ -81,7 +81,7 @@ class PolicyTable:
 
         def log_prob(ctx, val, acc):
             return acc \
-                + delta(ctx) * self[ctx] \
+                + delta(ctx) * np.log(self[ctx]) \
                 - self.order.decision_entropy(ctx)
         
         return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=0)
