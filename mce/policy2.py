@@ -80,9 +80,9 @@ class PolicyTable:
             return ctx.is_leaf - self.order.first_real_decision(ctx)
 
         def log_prob(ctx, val, acc):
-            return acc \
-                + delta(ctx) * np.log(self[ctx]) \
+            acc += delta(ctx) * np.log(self[ctx]) \
                 - self.order.decision_entropy(ctx)
+            return acc
         
         return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=0)
 
