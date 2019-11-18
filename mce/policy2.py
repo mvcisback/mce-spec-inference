@@ -1,6 +1,8 @@
 # TODO: switch to python3.8 for cached properties
 from typing import TypeVar, Tuple
 
+import aiger_bv as BV
+import aiger_coins as C
 import attr
 import funcy as fn
 import numpy as np
@@ -9,6 +11,7 @@ from fold_bdd.folds import Context
 from pyrsistent import pmap
 from pyrsistent.typing import PMap
 
+from mce.bdd import to_bdd
 from mce.order import BitOrder
 
 
@@ -107,3 +110,27 @@ def policy_tbl(bdd, order, coeff):
 
     tbl = post_order(bdd, merge)[0]
     return PolicyTable(coeff=coeff, order=order, bdd=bdd, tbl=tbl)
+
+
+def policy(mdp, spec, coeff, horizon, manager=None):
+    monitor = spec if isinstance(spec, BV.AIGBV) else BV.aig2aigbv(spec.aig)
+    output = monitor.omap[fn.first(monitor.outputs)][0]
+    composed = mdp >> C.circ2mdp(monitor)
+
+    # HACK. TODO fix. Remove extra outputs.
+    for out, size in mdp._aigbv.omap.items():
+        if out not in composed.outputs:
+            continue
+        composed >>= C.circ2mdp(BV.sink(size, [out]))
+
+    assert len(composed.outputs) == 1
+
+    bdd, (*__), order = to_bdd(composed, horizon, output=output, manager=manager)
+    return Policy(mdp, spec, policy_tbl(bdd, order, coeff))
+
+
+@attr.s
+class Policy:
+    mdp = attr.ib()
+    spec = attr.ib()
+    tbl = attr.ib()
