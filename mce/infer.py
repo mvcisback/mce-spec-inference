@@ -1,23 +1,18 @@
 import funcy as fn
 
-from mce.policy import policy
+from mce.policy2 import policy
+from mce.utils import empirical_sat_prob, ltl2monitor
 
 
-def spec_mle(mdp, demos, specs, top=100):
-    
-    horizon, encoded_trcs = len(demos[0][0]), None
+def spec_mle(mdp, demos, specs, top=100):    
+    horizon = len(demos[0][0])
 
-    spec2score = {}
     @fn.memoize
     def score(spec):
-        nonlocal spec2score
-        nonlocal encoded_trcs
+        ctrl = policy(mdp, spec, horizon=horizon, coeff=0)
+        encoded_trcs = ctrl.encode_trcs(demos)
+        ctrl.fit(empirical_sat_prob(ltl2monitor(spec), demos))
+        return sum(map(ctrl.log_likelihood_ratio, encoded_trcs))
 
-        ctrl = policy(mdp, spec, horizon=horizon)
-        if encoded_trcs is None:
-            encoded_trcs = ctrl.encode_trcs(demos)
-
-        spec2score[spec] = ctrl.fit(demos, top=top, encoded_trcs=encoded_trcs)
-        return spec2score
-
-    return max(specs, key=score), score.memory
+    best_spec = max(specs, key=score)
+    return best_spec, fn.walk_keys(lambda x: x[0], score.memory)

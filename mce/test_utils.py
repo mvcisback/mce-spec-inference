@@ -1,6 +1,6 @@
 import aiger_bv as BV
 
-from mce.utils import empirical_sat_prob
+from mce.utils import empirical_sat_prob, ltl2monitor
 from mce.test_scenarios import SPEC1, SPEC2, SPEC3 
 
 
@@ -10,10 +10,6 @@ ACTION_SEQS = 4*[3*[{'a': (True,), 'c': (True,)}]] + [
 ]
 
 TRCS = [(None, actions) for actions in ACTION_SEQS]
-
-
-def ltl2monitor(spec):
-    return BV.aig2aigbv(spec.aig)
 
 
 def test_empirical_sat_prob_smoke():

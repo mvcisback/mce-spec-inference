@@ -31,8 +31,16 @@ def test_policy_tbl():
             llr2 = ctrl._log_likelihood(trc)
             assert llr2 == approx(llr1)
 
+        ctrl = _policy(mdp, spec, horizon=3)
+        ctrl.fix_coeff(2)
+        ctrl2.coeff = 2
+        assert ctrl2.coeff == 2
+
 
 def test_long_horizon():
     for scenario in [scenario1, scenario_reactive]:
         spec, mdp = scenario()
         ctrl = policy(mdp, spec, horizon=20, coeff=1)
+        ctrl.fit(0.96)
+        assert ctrl.coeff > 0
+        assert ctrl.psat == approx(0.96)

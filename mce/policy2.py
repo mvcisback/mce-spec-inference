@@ -10,8 +10,9 @@ from fold_bdd import fold_path, post_order
 from fold_bdd.folds import Context
 from pyrsistent import pmap
 from pyrsistent.typing import PMap
+from scipy.optimize import brentq
 
-from mce.bdd import to_bdd
+from mce.bdd import to_bdd, TIMED_INPUT_MATCHER
 from mce.order import BitOrder
 
 
@@ -112,7 +113,7 @@ def policy_tbl(bdd, order, coeff):
     return PolicyTable(coeff=coeff, order=order, bdd=bdd, tbl=tbl)
 
 
-def policy(mdp, spec, coeff, horizon, manager=None):
+def policy(mdp, spec, horizon, coeff=None, manager=None):
     monitor = spec if isinstance(spec, BV.AIGBV) else BV.aig2aigbv(spec.aig)
     output = monitor.omap[fn.first(monitor.outputs)][0]
     composed = mdp >> C.circ2mdp(monitor)
@@ -126,11 +127,71 @@ def policy(mdp, spec, coeff, horizon, manager=None):
     assert len(composed.outputs) == 1
 
     bdd, (*__), order = to_bdd(composed, horizon, output=output, manager=manager)
-    return Policy(mdp, spec, policy_tbl(bdd, order, coeff))
+    return Policy(mdp, spec, horizon, policy_tbl(bdd, order, coeff))
 
 
 @attr.s
 class Policy:
     mdp = attr.ib()
     spec = attr.ib()
-    tbl = attr.ib()
+    horizon = attr.ib()
+    tbl = attr.ib(default=None)
+
+    @property
+    def coeff(self):
+        assert self.tbl is not None, "Need to fit or set coeff first!"
+        return self.tbl.coeff
+
+    @coeff.setter
+    def coeff(self, val):
+        if self.tbl is not None:
+            self.tbl = policy_tbl(self.tbl.bdd, self.tbl.order, val)
+        else:
+            self.tbl = policy(self.mdp, self.spec, self.horizon, coeff=coeff)
+
+    @property
+    def psat(self):
+        return self.tbl.psat
+
+    @property
+    def lsat(self):
+        return self.tbl.lsat
+
+    @property
+    def order(self):
+        return self.tbl.order
+
+    def fit(self, sat_prob, top=10):
+
+        def f(coeff):
+            self.coeff = coeff
+            return self.psat - sat_prob
+
+        if f(-top) > 0:
+            coeff = 0
+        elif f(top) < 0 :
+            coeff = top
+        else:
+            coeff = brentq(f, -top, top)
+
+        if coeff < 0:
+            self.coeff = 0
+
+    def log_likelihood_ratio(self, trc):
+        return self.tbl.log_likelihood_ratio(trc)
+
+    def _encode_trc(self, trc):
+        for lvl in range(self.order.horizon*self.order.total_bits):
+            var = self.tbl.bdd.bdd.var_at_level(lvl)
+            t1 = self.order.time_step(lvl)
+
+            name, idx, t2 = TIMED_INPUT_MATCHER.match(var).groups()
+            assert t1 == int(t2)
+            yield trc[t1][name][int(idx)]
+
+    def encode_trcs(self, trcs):
+        return [self.encode_trc(*v) for v in trcs]
+
+    def encode_trc(self, sys_actions, states):
+        trc = self.mdp.encode_trc(sys_actions, states)
+        return list(self._encode_trc(trc))
