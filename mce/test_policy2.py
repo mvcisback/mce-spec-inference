@@ -2,18 +2,19 @@ from itertools import product
 
 from pytest import approx
 
-from mce.policy import policy
-from mce.policy2 import policy_tbl
+from mce.policy import policy as _policy
+from mce.policy2 import policy_tbl, policy
 from mce.test_scenarios import scenario1, scenario_reactive
 
 
-def test_smoke():
+def test_policy_tbl():
     for scenario in [scenario1, scenario_reactive]:
         spec, mdp = scenario()
-        ctrl = policy(mdp, spec, horizon=3)
+        ctrl = _policy(mdp, spec, horizon=3)
         ctrl.fix_coeff(1)
 
-        ptbl = policy_tbl(ctrl.bdd, ctrl.order, 1)
+        ctrl2 = policy(mdp, spec, horizon=3, coeff=1, manager=ctrl.bdd.bdd)
+        ptbl = ctrl2.tbl
         assert ptbl.horizon == 3
 
         assert set(ctrl.tbl2.keys()) == set(ptbl.keys())
@@ -29,3 +30,9 @@ def test_smoke():
             llr1 = ptbl.log_likelihood_ratio(trc)
             llr2 = ctrl._log_likelihood(trc)
             assert llr2 == approx(llr1)
+
+
+def test_long_horizon():
+    for scenario in [scenario1, scenario_reactive]:
+        spec, mdp = scenario()
+        ctrl = policy(mdp, spec, horizon=20, coeff=1)
