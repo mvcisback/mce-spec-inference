@@ -47,24 +47,23 @@ class PolicyTable:
 
     @property
     def lsat(self):
-        order = self.order
-
         def merge(ctx, low, high):
             q = np.log(self[ctx])
             if ctx.is_leaf:
                 l = 0 if ctx.node_val ^ ctx.path_negated else -float('inf')
             else:
                 l = softmax(low, high)
-                if not order.is_decision(ctx):
+                if not self.order.is_decision(ctx):
                     l -= np.log(2)
-                elif order.on_boundary(ctx):
+                elif self.order.on_boundary(ctx):
                     l -= q
 
-            first_decision = order.first_real_decision(ctx)
-            prev_was_decision = order.prev_was_decision(ctx)
+            first_decision = self.order.first_real_decision(ctx)
+            prev_was_decision = self.order.prev_was_decision(ctx)
                 
             if not first_decision and prev_was_decision:
-                l += order.decision_entropy(ctx) + q
+                l += self.order.decision_entropy(ctx)
+                l += self.order.on_boundary(ctx)*q
 
             return l
         
@@ -173,6 +172,8 @@ class Policy:
             coeff = top
         else:
             coeff = brentq(f, -top, top)
+
+        self.coeff = coeff
 
         if coeff < 0:
             self.coeff = 0
