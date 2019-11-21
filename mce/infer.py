@@ -1,4 +1,4 @@
-from multiprocessing import Pool
+from multiprocess import Pool
 
 import funcy as fn
 
@@ -8,6 +8,7 @@ from mce.utils import empirical_sat_prob, ltl2monitor
 
 def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
     horizon = len(demos[0][0])
+    specs = list(specs)
 
     @fn.memoize
     def score(spec):
@@ -22,10 +23,16 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
         return sum(map(ctrl.log_likelihood_ratio, encoded_trcs))
 
     if parallel:
-        def score2(spec):
-            return score(spec), spec
+        _specs = list(enumerate(specs))
 
-        _, best_spec = max(Pool().map(score2, specs), key=lambda x: x[0])
+        def score2(spec):
+            i, spec = spec
+            return i, score(spec)
+
+        spec2score = dict(Pool().map(score2, _specs))
+        spec2score = fn.walk_keys(lambda idx: specs[idx], spec2score)
+        best_spec = max(specs, key=spec2score.get)
+        
     else:
         best_spec = max(specs, key=score)
         spec2score = fn.walk_keys(lambda x: x[0], score.memory)
