@@ -188,7 +188,9 @@ class Policy:
             yield trc[t1][name][int(idx)]
 
     def encode_trcs(self, trcs):
-        return [self.encode_trc(*v) for v in trcs]
+        unique_trcs = set(trcs)
+        trc2encoding = {v: self.encode_trc(*v) for v in unique_trcs}
+        return fn.lmap(trc2encoding.get, trcs)
 
     def encode_trc(self, sys_actions, states):
         trc = self.mdp.encode_trc(sys_actions, states)
