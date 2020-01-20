@@ -1,5 +1,5 @@
 # TODO: switch to python3.8 for cached properties
-from typing import TypeVar, Tuple
+from typing import TypeVar, Tuple, Dict
 
 import aiger_bv as BV
 import aiger_coins as C
@@ -8,8 +8,6 @@ import funcy as fn
 import numpy as np
 from fold_bdd import fold_path, post_order
 from fold_bdd.folds import Context
-from pyrsistent import pmap
-from pyrsistent.typing import PMap
 from scipy.optimize import brentq
 
 from mce.bdd import to_bdd, TIMED_INPUT_MATCHER
@@ -30,7 +28,7 @@ class PolicyTable:
     coeff: float
     order: BitOrder
     bdd: BExpr
-    tbl: PMap[Tuple[BExpr, bool], float] = None
+    tbl: Dict[Tuple[BExpr, bool], float] = None
 
     @property
     def horizon(self):
@@ -53,23 +51,23 @@ class PolicyTable:
         def merge(ctx, low, high):
             q = np.log(self[ctx])
             if ctx.is_leaf:
-                l = 0 if ctx.node_val ^ ctx.path_negated else -float('inf')
+                acc = 0 if ctx.node_val ^ ctx.path_negated else -float('inf')
             else:
-                l = softmax(low, high)
+                acc = softmax(low, high)
                 if not self.order.is_decision(ctx):
-                    l -= np.log(2)
+                    acc -= np.log(2)
                 elif self.order.on_boundary(ctx):
-                    l -= q
+                    acc -= q
 
             first_decision = self.order.first_real_decision(ctx)
             prev_was_decision = self.order.prev_was_decision(ctx)
-                
-            if not first_decision and prev_was_decision:
-                l += self.order.decision_entropy(ctx)
-                l += self.order.on_boundary(ctx)*q
 
-            return l
-        
+            if not first_decision and prev_was_decision:
+                acc += self.order.decision_entropy(ctx)
+                acc += self.order.on_boundary(ctx)*q
+
+            return acc
+
         return post_order(self.bdd, merge)
 
     @property
@@ -89,7 +87,7 @@ class PolicyTable:
             acc += delta(ctx) * np.log(self[ctx]) \
                 - self.order.decision_entropy(ctx)
             return acc
-        
+
         return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=0)
 
 
@@ -103,7 +101,7 @@ def policy_tbl(bdd, order, coeff):
         else:
             (tbl_l, val_l), (tbl_r, val_r) = low, high
             tbl = fn.merge(tbl_l, tbl_r)
-            
+
             decision = order.is_decision(ctx)
             val = (val_l + val_r) if decision else np.sqrt(val_l*val_r)
             tbl[ctx.node, negated] = val
@@ -132,7 +130,9 @@ def policy(mdp, spec, horizon, coeff=None, manager=None, psat=None):
 
     assert len(composed.outputs) == 1
 
-    bdd, (*__), order = to_bdd(composed, horizon, output=output, manager=manager)
+    bdd, (*__), order = to_bdd(
+        composed, horizon, output=output, manager=manager
+    )
     ctrl = Policy(mdp, spec, horizon, policy_tbl(bdd, order, coeff))
     if psat is not None:
         ctrl.fit(psat)
@@ -174,7 +174,7 @@ class Policy:
 
         if f(-top) > 0:
             coeff = 0
-        elif f(top) < 0 :
+        elif f(top) < 0:
             coeff = top
         else:
             coeff = brentq(f, -top, top)

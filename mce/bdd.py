@@ -11,7 +11,7 @@ TIMED_INPUT_MATCHER = re.compile(r'(.*)\[(\d+)\]##time_(\d+)')
 
 
 def to_bdd(mdp, horizon, output=None, manager=None):
-    circ = mdp.aigbv 
+    circ = mdp.aigbv
     circ >>= aiger_bv.sink(1, ['##valid'])  # TODO: handle ##valid.
     unrolled = circ.aig.unroll(horizon, only_last_outputs=True)  # HACK
 
@@ -37,7 +37,7 @@ def to_bdd(mdp, horizon, output=None, manager=None):
 
     bdd, manager, input2var = aiger_bdd.to_bdd(
         unrolled, output=output, manager=manager,
-        renamer=lambda _, x: x, levels=causal_order(), 
+        renamer=lambda _, x: x, levels=causal_order(),
     )
 
     def count_bits(inputs):

@@ -1,10 +1,7 @@
-import aiger_ptltl as PLTL
 import funcy as fn
-import hypothesis.strategies as st
-from hypothesis import given
 
 from mce import infer
-from mce.test_scenarios import sys1, sys2, sys3, SPEC1, SPEC2, SPEC3
+from mce.test_scenarios import sys1, sys3, SPEC1, SPEC2, SPEC3
 from mce.utils import empirical_sat_prob
 
 
@@ -12,8 +9,8 @@ def create_demos(n):
     actions1 = states1 = 3*[{'a': (True, )}]
     actions2 = states2 = 3*[{'a': (False, )}]
     actions3 = states3 = [
-        {'a': (True, )}, 
-        {'a': (False, )}, 
+        {'a': (True, )},
+        {'a': (False, )},
         {'a': (False, )},
     ]
 
@@ -52,7 +49,9 @@ def create_demos2(n):
     def create_states(actions, coins):
         coins_next = [{'c_next': v['c']} for v in coins]
         coins = [{'c': (True,)}] + coins
-        return [fn.merge(x, y, z) for x, y, z in zip (actions, coins, coins_next)]
+        return [
+            fn.merge(x, y, z) for x, y, z in zip(actions, coins, coins_next)
+        ]
 
     actions1 = [{'a': (True, )}, {'a': (False, )}, {'a': (True, )}]
     states1 = [

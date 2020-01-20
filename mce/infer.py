@@ -18,7 +18,7 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
             sat_prob = empirical_sat_prob(spec, demos)
         else:
             sat_prob = psat
-        
+
         ctrl.fit(sat_prob)
         return sum(map(ctrl.log_likelihood_ratio, encoded_trcs))
 
@@ -32,7 +32,7 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
         spec2score = dict(Pool().map(score2, _specs))
         spec2score = fn.walk_keys(lambda idx: specs[idx], spec2score)
         best_spec = max(specs, key=spec2score.get)
-        
+
     else:
         best_spec = max(specs, key=score)
         spec2score = fn.walk_keys(lambda x: x[0], score.memory)

@@ -1,7 +1,5 @@
-import aiger_bv as BV
-
 from mce.utils import empirical_sat_prob
-from mce.test_scenarios import SPEC1, SPEC2, SPEC3 
+from mce.test_scenarios import SPEC1, SPEC2, SPEC3
 
 
 ACTION_SEQS = 4*[3*[{'a': (True,), 'c': (True,)}]] + [

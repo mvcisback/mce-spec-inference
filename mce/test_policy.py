@@ -1,10 +1,9 @@
 from itertools import product
 
-import hypothesis.strategies as st
 import pytest
 
 from hypothesis import given, settings
-from numpy import logaddexp, exp, log, ceil
+from numpy import logaddexp, exp, log
 
 from mce.policy2 import policy as policy
 from mce.test_scenarios import scenario1, scenario_reactive, SCENARIOS
@@ -43,7 +42,7 @@ def test_coeff_zero(scenario):
     if psat not in (0, 1):
         assert psat2 == pytest.approx(1 - psat)
 
-    
+
 def test_psat_mock():
     spec, mdp = scenario1()
     ctrl = policy(mdp, spec, horizon=3, coeff=1)
@@ -60,14 +59,17 @@ def test_trc_likelihood():
     sys_actions = states = 3*[{'a': (True,)}]
     trc = ctrl.encode_trc(sys_actions, states)
     assert trc == [True, True, True]
-    
+
     l_sat = 1 - log(exp(1) + 7*exp(-1))
     assert ctrl.log_likelihood_ratio(trc) == pytest.approx(l_sat)
 
     l_fail = -1 - log(exp(1) + 7*exp(-1))
     for trc in product(*(3*[[False, True]])):
         llr = ctrl.log_likelihood_ratio(trc)
-        expected = l_sat if all(trc) else l_fail - (2 - trc.index(False))*log(2)
+        if all(trc):
+            expected = l_sat
+        else:
+            expected = l_fail - (2 - trc.index(False))*log(2)
         assert llr == pytest.approx(expected)
 
 
@@ -102,15 +104,14 @@ def test_reactive_psat(coeff=2, horizon=3):
     for lvl, val in lvl_map.items():
         if lvl % 2:
             assert val == lvl_map[lvl + 1]
-        else: 
+        else:
             paths = 2**(horizon - (lvl/2)) - 1
             expected = exp(coeff) + paths*exp(-coeff)
             assert val == pytest.approx(expected)
 
     sat_prob = ctrl.psat
-    log_prob = pytest.approx(ctrl.lsat)
     x = exp(2*coeff)
-    expect_sat_prob = 1 / (1 + (2**horizon - 1)/ x)
+    expect_sat_prob = 1 / (1 + (2**horizon - 1) / x)
     assert sat_prob == pytest.approx(expect_sat_prob)
 
 
@@ -118,6 +119,6 @@ def test_long_horizon():
     # TODO: test that more scenarios work with long horizons.
     for scenario in [scenario1, scenario_reactive]:
         spec, mdp = scenario()
-        ctrl = policy(mdp, spec, horizon=10, psat=0.96)        
+        ctrl = policy(mdp, spec, horizon=10, psat=0.96)
         assert ctrl.coeff > 0
         assert ctrl.psat == pytest.approx(0.96)

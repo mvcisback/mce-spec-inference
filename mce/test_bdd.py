@@ -1,5 +1,3 @@
-import re
-
 import aiger_bv as BV
 import aiger_coins as C
 import aiger_ptltl as PLTL
@@ -31,7 +29,6 @@ def test_smoke():
 
 def test_smoke2():
     spec, mdp = scenario_reactive()
-    orig_mdp = mdp
 
     spec_circ = BV.aig2aigbv(spec.aig)
     mdp >>= C.circ2mdp(spec_circ)
@@ -41,19 +38,9 @@ def test_smoke2():
 
     assert bdd.dag_size == 7
 
-    levels = {
-        'a[0]##time_0': 0,
-        'c[0]##time_0': 1,
-        'a[0]##time_1': 2,
-        'c[0]##time_1': 3,
-        'a[0]##time_2': 4,
-        'c[0]##time_2': 5,
-    }
-
     def translate(mapping):
         return fn.walk_keys(input2var.get, mapping)
 
-    #assert bdd.bdd.var_levels == translate(levels)
     assert bdd.count(6) == 8
 
     node = bdd
@@ -89,7 +76,6 @@ def test_smoke2():
         'a[0]##time_2': False,
         'c[0]##time_2': False,
     }), bdd) == bdd.bdd.true
-
 
     assert bdd.bdd.let(translate({
         'c[0]##time_0': False,

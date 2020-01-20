@@ -17,7 +17,7 @@ def empirical_sat_prob(monitor, trcs):
     ]
 
     assert len(circ.outputs) == 1
-    
+
     name = fn.first(circ.outputs)
     n_sat = sum(circ.simulate(trc)[-1][0][name][0] for trc in trcs2)
     return n_sat / len(trcs)

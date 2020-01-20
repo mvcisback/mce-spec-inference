@@ -1,4 +1,3 @@
-from math import log
 from typing import Tuple
 
 import attr
@@ -25,7 +24,7 @@ class BitOrder:
     def time_interval(self, lvl: int) -> Tuple[int]:
         idx = self.round_index(lvl)
         return lvl - idx, lvl + (self.total_bits - 1 - idx)
-    
+
     def interval(self, lvl: int) -> Tuple[int]:
         bot, top = self.time_interval(lvl)
         boundary = bot + self.decision_bits - 1
@@ -80,7 +79,7 @@ class BitOrder:
     def on_boundary(self, ctx):
         if self.first_real_decision(ctx):
             return True
-        return self.interval(ctx.curr_lvl) !=  self.interval(ctx.prev_lvl)
+        return self.interval(ctx.curr_lvl) != self.interval(ctx.prev_lvl)
 
     def first_real_decision(self, ctx):
         return ctx.prev_lvl is None
