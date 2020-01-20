@@ -3,7 +3,7 @@ from multiprocess import Pool
 import funcy as fn
 
 from mce.policy2 import policy
-from mce.utils import empirical_sat_prob, ltl2monitor
+from mce.utils import empirical_sat_prob
 
 
 def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):

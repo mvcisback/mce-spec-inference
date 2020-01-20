@@ -2,13 +2,12 @@ import aiger_bv as BV
 import funcy as fn
 
 
-def ltl2monitor(spec):    
-    return BV.aig2aigbv(spec.aig)
-
-
 def empirical_sat_prob(monitor, trcs):
     if not isinstance(monitor, BV.AIGBV):
-        circ = monitor.aigbv
+        if hasattr(monitor, "aigbv"):
+            circ = monitor.aigbv
+        else:
+            circ = BV.aig2aigbv(monitor.aig)
     else:
         circ = monitor
     trcs2 = fn.pluck(1, trcs)  # Only care about state observations.
@@ -17,8 +16,8 @@ def empirical_sat_prob(monitor, trcs):
         fn.lmap(lambda x: fn.project(x, circ.inputs), trc) for trc in trcs2
     ]
 
-    assert len(monitor.outputs) == 1
-    name = fn.first(monitor.outputs)
+    assert len(circ.outputs) == 1
+    
+    name = fn.first(circ.outputs)
     n_sat = sum(circ.simulate(trc)[-1][0][name][0] for trc in trcs2)
     return n_sat / len(trcs)
-

@@ -32,11 +32,10 @@ SPECS = [
 
 
 def test_monotonic_empirical_sat_prob():
-    mdp = sys1()
     psat = 0
     for i in range(5):
         demos = create_demos(i)
-        prev, psat = psat, empirical_sat_prob(mdp, demos)
+        prev, psat = psat, empirical_sat_prob(SPEC1, demos)
         assert prev <= psat
 
 

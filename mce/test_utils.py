@@ -1,6 +1,6 @@
 import aiger_bv as BV
 
-from mce.utils import empirical_sat_prob, ltl2monitor
+from mce.utils import empirical_sat_prob
 from mce.test_scenarios import SPEC1, SPEC2, SPEC3 
 
 
@@ -17,5 +17,4 @@ def test_empirical_sat_prob_smoke():
     psats = [5/6, 1, 4/6]
 
     for spec, psat in zip(specs, psats):
-        monitor = ltl2monitor(spec)
-        assert psat == empirical_sat_prob(monitor, TRCS)
+        assert psat == empirical_sat_prob(spec, TRCS)
