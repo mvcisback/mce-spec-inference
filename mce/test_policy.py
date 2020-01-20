@@ -112,3 +112,11 @@ def test_reactive_psat(coeff=2, horizon=3):
     x = exp(2*coeff)
     expect_sat_prob = 1 / (1 + (2**horizon - 1)/ x)
     assert sat_prob == pytest.approx(expect_sat_prob)
+
+
+def test_long_horizon():
+    for scenario in [scenario1]:
+        spec, mdp = scenario()
+        ctrl = policy(mdp, spec, horizon=200, psat=0.96)
+        assert ctrl.coeff > 0
+        assert ctrl.psat == pytest.approx(0.96)

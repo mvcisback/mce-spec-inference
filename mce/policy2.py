@@ -166,7 +166,7 @@ class Policy:
     def order(self):
         return self.tbl.order
 
-    def fit(self, sat_prob, top=10):
+    def fit(self, sat_prob, top=100):
 
         def f(coeff):
             self.coeff = coeff
@@ -174,8 +174,10 @@ class Policy:
 
         if f(-top) > 0:
             coeff = 0
+
         elif f(top) < 0 :
             coeff = top
+            
         else:
             coeff = brentq(f, -top, top)
 
