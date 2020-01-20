@@ -115,6 +115,7 @@ def test_reactive_psat(coeff=2, horizon=3):
 
 
 def test_long_horizon():
+    # TODO: test that more scenarios work with long horizons.
     for scenario in [scenario1]:
         spec, mdp = scenario()
         ctrl = policy(mdp, spec, horizon=200, psat=0.96)

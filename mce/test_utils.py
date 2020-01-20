@@ -14,8 +14,8 @@ TRCS = [(None, actions) for actions in ACTION_SEQS]
 
 def test_empirical_sat_prob_smoke():
     specs = [SPEC1, SPEC2, SPEC3]
-    psats = [7/8, 1, ]
+    psats = [5/6, 1, 4/6]
 
-    for spec in zip(specs, psats):
-        monitor = ltl2monitor(SPEC1)
-        empirical_sat_prob(monitor, TRCS)
+    for spec, psat in zip(specs, psats):
+        monitor = ltl2monitor(spec)
+        assert psat == empirical_sat_prob(monitor, TRCS)

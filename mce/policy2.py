@@ -174,10 +174,8 @@ class Policy:
 
         if f(-top) > 0:
             coeff = 0
-
         elif f(top) < 0 :
             coeff = top
-            
         else:
             coeff = brentq(f, -top, top)
 

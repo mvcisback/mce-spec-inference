@@ -1,10 +1,9 @@
 import aiger_bv as BV
 import funcy as fn
-from aiger_bv.aigbv import rebundle_aig
 
 
-def ltl2monitor(spec):
-    return rebundle_aig(spec.aig)
+def ltl2monitor(spec):    
+    return BV.aig2aigbv(spec.aig)
 
 
 def empirical_sat_prob(monitor, trcs):
