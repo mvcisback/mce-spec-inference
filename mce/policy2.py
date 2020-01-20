@@ -39,6 +39,9 @@ class PolicyTable:
     def keys(self):
         return self.tbl.keys()
 
+    def items(self):
+        return self.tbl.items()
+
     def __getitem__(self, key):
         if isinstance(key, Context):
             key = key.node, key.path_negated
@@ -112,7 +115,11 @@ def policy_tbl(bdd, order, coeff):
     return PolicyTable(coeff=coeff, order=order, bdd=bdd, tbl=tbl)
 
 
-def policy(mdp, spec, horizon, coeff=None, manager=None):
+def policy(mdp, spec, horizon, coeff=None, manager=None, psat=None):
+    assert (coeff is None) ^ (psat is None)
+    if coeff is None:
+        coeff = 0
+
     monitor = spec if isinstance(spec, BV.AIGBV) else BV.aig2aigbv(spec.aig)
     output = monitor.omap[fn.first(monitor.outputs)][0]
     composed = mdp >> C.circ2mdp(monitor)
@@ -126,7 +133,10 @@ def policy(mdp, spec, horizon, coeff=None, manager=None):
     assert len(composed.outputs) == 1
 
     bdd, (*__), order = to_bdd(composed, horizon, output=output, manager=manager)
-    return Policy(mdp, spec, horizon, policy_tbl(bdd, order, coeff))
+    ctrl = Policy(mdp, spec, horizon, policy_tbl(bdd, order, coeff))
+    if psat is not None:
+        ctrl.fit(psat)
+    return ctrl
 
 
 @attr.s
@@ -134,19 +144,15 @@ class Policy:
     mdp = attr.ib()
     spec = attr.ib()
     horizon = attr.ib()
-    tbl = attr.ib(default=None)
+    tbl = attr.ib()
 
     @property
     def coeff(self):
-        assert self.tbl is not None, "Need to fit or set coeff first!"
         return self.tbl.coeff
 
     @coeff.setter
     def coeff(self, val):
-        if self.tbl is not None:
-            self.tbl = policy_tbl(self.tbl.bdd, self.tbl.order, val)
-        else:
-            self.tbl = policy(self.mdp, self.spec, self.horizon, coeff=coeff)
+        self.tbl = policy_tbl(self.tbl.bdd, self.tbl.order, val)
 
     @property
     def psat(self):
@@ -179,6 +185,7 @@ class Policy:
             self.coeff = 0
 
     def log_likelihood_ratio(self, trc):
+        """Log Likelihood policy  - log likelihood dynamics"""
         return self.tbl.log_likelihood_ratio(trc)
 
     def _encode_trc(self, trc):
