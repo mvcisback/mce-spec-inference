@@ -115,13 +115,14 @@ def policy_tbl(bdd, order, coeff):
             tbl = {(ctx.node, negated): val}
         else:
             (tbl_l, val_l), (tbl_r, val_r) = low, high
+            val_l *= 2**order.decisions_on_edge2(ctx, False)
+            val_r *= 2**order.decisions_on_edge2(ctx, True)
             tbl = fn.merge(tbl_l, tbl_r)
 
             decision = order.is_decision(ctx)
             val = (val_l + val_r) if decision else np.sqrt(val_l*val_r)
             tbl[ctx.node, negated] = val
 
-        val *= 2**order.decisions_on_edge(ctx)
         return tbl, val
 
     tbl = post_order(bdd, merge)[0]
