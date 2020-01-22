@@ -13,12 +13,12 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.7"
 theano = "^1.0"
-py-aiger-coins = {version = "^1.2.4", extras = ["sat", "bdd"]}
+py-aiger-coins = {version = "^1.3", extras = ["sat", "bdd"]}
 py-aiger-bv = "^1.3.3"
 py-aiger-bdd = "^0.2.6"
 attrs = "^19.3"
 funcy = "^1.13"
-fold-bdd = "^0.3.0"
+fold-bdd = "^0.6.0"
 
 [tool.poetry.dev-dependencies]
 codecov = "^2.0"

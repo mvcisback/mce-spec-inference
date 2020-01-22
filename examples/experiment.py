@@ -137,7 +137,7 @@ STATES5 = (
 TRC5 = (ACTIONS5, STATES5)
 
 
-TRACES = [TRC0, TRC1, TRC2, TRC3, TRC4]*10 + [TRC5]
+TRACES = [TRC0, TRC1, TRC2, TRC3, TRC4]*30 + [TRC5]
 
 
 def encode_trace(trc):
