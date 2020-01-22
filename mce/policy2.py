@@ -48,6 +48,9 @@ class PolicyTable:
 
     @property
     def lsat(self):
+        # TODO: replace with ctx.first_lvl
+        first_lvl = self.bdd.level
+
         def merge(ctx, low, high):
             q = np.log(self[ctx])
             if ctx.is_leaf:
@@ -59,7 +62,7 @@ class PolicyTable:
                 elif self.order.on_boundary(ctx):
                     acc -= q
 
-            first_decision = self.order.first_real_decision(ctx)
+            first_decision = ctx.curr_lvl == first_lvl
             prev_was_decision = self.order.prev_was_decision(ctx)
 
             if not first_decision and prev_was_decision:
