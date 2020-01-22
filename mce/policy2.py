@@ -51,27 +51,37 @@ class PolicyTable:
         # TODO: replace with ctx.first_lvl
         first_lvl = self.bdd.level
 
-        def merge(ctx, low, high):
-            q = np.log(self[ctx])
-            if ctx.is_leaf:
-                acc = 0 if ctx.node_val ^ ctx.path_negated else -float('inf')
-            else:
-                acc = softmax(low, high)
-                if not self.order.is_decision(ctx):
-                    acc -= np.log(2)
-                elif self.order.on_boundary(ctx):
-                    acc -= q
-
+        def bump(ctx, q, acc):
             first_decision = ctx.curr_lvl == first_lvl
             prev_was_decision = self.order.prev_was_decision(ctx)
 
             if not first_decision and prev_was_decision:
                 acc += self.order.decision_entropy(ctx)
                 acc += self.order.on_boundary(ctx)*q
-
             return acc
 
-        return post_order(self.bdd, merge)
+
+        def merge(ctx, low, high):
+            q = np.log(self[ctx])
+
+            if ctx.is_leaf:
+                acc = 0 if ctx.node_val ^ ctx.path_negated else -float('inf')
+            else:
+                low, l_ctx, l_q = low
+                high, h_ctx, h_q = high
+                low = bump(l_ctx, l_q, low)
+                high = bump(h_ctx, h_q, high)
+
+                acc = softmax(low, high)
+                if not self.order.is_decision(ctx):
+                    acc -= np.log(2)
+                elif self.order.on_boundary(ctx):
+                    acc -= q
+
+            #acc = bump(ctx, q, acc)
+            return acc, ctx, q
+
+        return post_order(self.bdd, merge)[0]
 
     @property
     def psat(self):
