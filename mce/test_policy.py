@@ -119,6 +119,6 @@ def test_long_horizon():
     # TODO: test that more scenarios work with long horizons.
     for scenario in [scenario1, scenario_reactive]:
         spec, mdp = scenario()
-        ctrl = policy(mdp, spec, horizon=10, psat=0.96)
+        ctrl = policy(mdp, spec, horizon=30, psat=0.96)
         assert ctrl.coeff > 0
         assert ctrl.psat == pytest.approx(0.96)

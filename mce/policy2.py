@@ -48,9 +48,6 @@ class PolicyTable:
 
     @property
     def lsat(self):
-        # TODO: replace with ctx.first_lvl
-        first_lvl = self.bdd.level
-
         def bump(ctx, child_ctx, q, acc, edge):
             if self.order.is_decision(ctx):
                 acc += self.order.decision_entropy2(ctx, edge)
@@ -75,7 +72,7 @@ class PolicyTable:
             acc = softmax(low, high)
             if not self.order.is_decision(ctx):
                 acc -= np.log(2)
-            elif first_lvl == ctx.curr_lvl:
+            elif ctx.first_lvl == ctx.curr_lvl:
                 acc -= q
 
             return acc, q, ctx
@@ -91,10 +88,8 @@ class PolicyTable:
         Compute the ratio of the likelihood of the abstract trace
         using this policy over the uniformly random policy.
         """
-        # TODO: replace with ctx.first_lvl
-        first_lvl = self.bdd.level
         def delta(ctx):
-            return ctx.is_leaf - (ctx.curr_lvl == first_lvl)
+            return ctx.is_leaf - (ctx.curr_lvl == ctx.first_lvl)
 
         def log_prob(ctx, val, acc):
             acc, prev_lvl = acc
