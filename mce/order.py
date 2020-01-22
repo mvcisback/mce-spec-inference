@@ -82,7 +82,7 @@ class BitOrder:
         return self.interval(ctx.curr_lvl) != self.interval(ctx.prev_lvl)
 
     def on_boundary2(self, ctx, edge):
-        lvl = ctx.high_lvl if edge else ctx.low_lvl
+        lvl = self.edge2lvl(ctx, edge)
         return self.interval(ctx.curr_lvl) != self.interval(lvl)
 
     def first_real_decision(self, ctx):
@@ -98,7 +98,7 @@ class BitOrder:
         return self.skipped_decisions(prev_lvl, ctx.curr_lvl)
 
     def decisions_on_edge2(self, ctx, edge):
-        lvl = ctx.high_lvl if edge else ctx.low_lvl
+        lvl = self.edge2lvl(ctx, edge)
         return self.skipped_decisions(ctx.curr_lvl, lvl)
 
     def decision_entropy(self, ctx):
@@ -106,3 +106,7 @@ class BitOrder:
 
     def decision_entropy2(self, ctx, edge):
         return np.log(2)*self.decisions_on_edge2(ctx, edge)
+
+    def edge2lvl(self, ctx, edge):
+        lvl = ctx.high_lvl if edge else ctx.low_lvl
+        return ctx.max_lvl + 1 if lvl is None else lvl

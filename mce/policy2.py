@@ -87,16 +87,19 @@ class PolicyTable:
         Compute the ratio of the likelihood of the abstract trace
         using this policy over the uniformly random policy.
         """
-
+        # TODO: replace with ctx.first_lvl
+        first_lvl = self.bdd.level
         def delta(ctx):
-            return ctx.is_leaf - self.order.first_real_decision(ctx)
+            return ctx.is_leaf - (ctx.curr_lvl == first_lvl)
 
         def log_prob(ctx, val, acc):
-            acc += delta(ctx) * np.log(self[ctx]) \
-                - self.order.decision_entropy(ctx)
-            return acc
+            acc, prev_lvl = acc
+            acc += delta(ctx) * np.log(self[ctx])
+            skipped = self.order.skipped_decisions(prev_lvl, ctx.curr_lvl)
+            acc -= np.log(2) * skipped   # Uniform policy.
+            return acc, ctx.curr_lvl
 
-        return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=0)
+        return fold_path(merge=log_prob, bexpr=self.bdd, vals=trc, initial=(0, -1))[0]
 
 
 def policy_tbl(bdd, order, coeff):
