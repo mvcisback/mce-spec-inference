@@ -36,7 +36,7 @@ def test_monotonic_empirical_sat_prob():
         assert prev <= psat
 
 
-def test_infer_log_likelihood():
+def test_infer_log_likelihood1():
     mdp = sys1()
     demos = create_demos(10)
 

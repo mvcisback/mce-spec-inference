@@ -55,6 +55,10 @@ class PolicyTable:
             if self.order.is_decision(ctx):
                 acc += self.order.decision_entropy2(ctx, edge)
                 acc += self.order.on_boundary2(ctx, edge)*q
+
+            if not child_ctx.is_leaf and self.order.is_decision(child_ctx):
+                acc -= self.order.on_boundary2(ctx, edge)*q
+
             return acc
 
         def merge(ctx, low, high):
@@ -71,8 +75,7 @@ class PolicyTable:
             acc = softmax(low, high)
             if not self.order.is_decision(ctx):
                 acc -= np.log(2)
-            elif first_lvl == ctx.curr_lvl or \
-                 self.order.boundary_edge(ctx.curr_lvl, ctx.prev_lvl):
+            elif first_lvl == ctx.curr_lvl:
                 acc -= q
 
             return acc, q, ctx
