@@ -79,11 +79,14 @@ class BitOrder:
     def on_boundary(self, ctx):
         if self.first_real_decision(ctx):
             return True
-        return self.interval(ctx.curr_lvl) != self.interval(ctx.prev_lvl)
+        return self.boundary_edge(ctx.curr_lvl, ctx.prev_lvl)
 
     def on_boundary2(self, ctx, edge):
         lvl = self.edge2lvl(ctx, edge)
-        return self.interval(ctx.curr_lvl) != self.interval(lvl)
+        return self.boundary_edge(ctx.curr_lvl, lvl)
+
+    def boundary_edge(self, lvl1, lvl2):
+        return self.interval(lvl1) != self.interval(lvl2)
 
     def first_real_decision(self, ctx):
         return ctx.prev_lvl is None

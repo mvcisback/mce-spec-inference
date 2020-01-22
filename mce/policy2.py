@@ -51,7 +51,7 @@ class PolicyTable:
         # TODO: replace with ctx.first_lvl
         first_lvl = self.bdd.level
 
-        def bump(ctx, q, acc, edge):
+        def bump(ctx, child_ctx, q, acc, edge):
             if self.order.is_decision(ctx):
                 acc += self.order.decision_entropy2(ctx, edge)
                 acc += self.order.on_boundary2(ctx, edge)*q
@@ -62,19 +62,20 @@ class PolicyTable:
 
             if ctx.is_leaf:
                 acc = 0 if ctx.node_val ^ ctx.path_negated else -float('inf')
-                return acc, q
+                return acc, q, ctx
 
-            (low, l_q), (high, h_q) = low, high
-            low = bump(ctx, l_q, low, False)
-            high = bump(ctx, h_q, high, True)
+            (low, l_q, l_ctx), (high, h_q, h_ctx) = low, high
+            low = bump(ctx, l_ctx, l_q, low, False)
+            high = bump(ctx, h_ctx, h_q, high, True)            
 
             acc = softmax(low, high)
             if not self.order.is_decision(ctx):
                 acc -= np.log(2)
-            elif self.order.on_boundary(ctx):
+            elif first_lvl == ctx.curr_lvl or \
+                 self.order.boundary_edge(ctx.curr_lvl, ctx.prev_lvl):
                 acc -= q
 
-            return acc, q
+            return acc, q, ctx
 
         return post_order(self.bdd, merge)[0]
 
