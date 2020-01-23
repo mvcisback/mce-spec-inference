@@ -9,6 +9,7 @@ import funcy as fn
 import termplotlib as tpl
 from bidict import bidict
 from blessings import Terminal
+from dd2nx.to_nx import to_nx
 
 
 from mce.infer import spec_mle
@@ -45,6 +46,10 @@ def create_sensor(aps):
 
 SENSOR = create_sensor(APS)
 DYN = GW.gridworld(8, start=(3, 5), compressed_inputs=True)
+
+SLIP = BV.atom(1, 'c', signed=False).repeat(2) & BV.atom(2, 'a', signed=False)
+SLIP = SLIP.with_output('a').aigbv
+DYN2 = C.coin((1, 16), 'c') >> C.circ2mdp(DYN << SLIP)
 
 
 def encode_state(x, y):
@@ -223,9 +228,10 @@ def eval_monitors(trc):
 
 def infer():
     trcs = [encode_trace(trc) for trc in TRACES]
-    mdp = C.circ2mdp(DYN)
+    #mdp = C.circ2mdp(DYN)
+    mdp = DYN2
     best, spec2score = spec_mle(
-        mdp, trcs, SPEC2MONITORS.values(), psat=0.98, parallel=True
+        mdp, trcs, SPEC2MONITORS.values(), psat=0.98, parallel=False
     )
 
     fig = tpl.figure()
