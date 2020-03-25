@@ -12,8 +12,11 @@ TIMED_INPUT_MATCHER = re.compile(r'(.*)\[(\d+)\]##time_(\d+)')
 
 def to_bdd(mdp, horizon, output=None, manager=None):
     circ = mdp.aigbv
-    circ >>= aiger_bv.sink(1, ['##valid'])  # TODO: handle ##valid.
-    unrolled = circ.aig.unroll(horizon, only_last_outputs=True)  # HACK
+
+    if '##valid' in circ.inputs:  # TODO: handle ##valid.
+        circ >>= aiger_bv.sink(1, ['##valid'])
+
+    unrolled = circ.unroll(horizon, only_last_outputs=True)  # HACK
 
     if output is not None:
         output = f"{output}##time_{horizon}"
@@ -24,9 +27,10 @@ def to_bdd(mdp, horizon, output=None, manager=None):
     def causal_order():
 
         def flattened(t):
+            # TODO: clean up based on bundles
             def fmt(k):
                 idxs = range(imap[k].size)
-                return [f"{k}[{i}]##time_{t}" for i in idxs]
+                return [f"{k}##time_{t}[{i}]" for i in idxs]
 
             actions = fn.lmapcat(fmt, inputs)
             coin_flips = fn.lmapcat(fmt, env_inputs)

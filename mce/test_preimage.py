@@ -6,6 +6,7 @@ from mce.test_scenarios import scenario_reactive
 from mce.preimage import preimage
 from mce.bdd import to_bdd
 
+
 def xor(x, y):
     return (x | y) & ~(x & y)
 
@@ -30,12 +31,29 @@ def test_preimage():
 
     bexpr1, manager, _, order = to_bdd(sys2, horizon=3)
 
+    def accepts(bexpr, actions):
+        """Check if bexpr accepts action sequence."""
+        timed_actions = {}
+        for t, action in enumerate(actions):
+            c, a = action['c'], action['a']
+            timed_actions.update(
+                {f'c##time_{t}[0]': c[0], f'a##time_{t}[0]': a[0]}
+            )
+
+        assert timed_actions.keys() == manager.vars.keys()
+        tmp = manager.let(timed_actions, bexpr)
+        assert tmp in (manager.true, manager.false)
+        return tmp == manager.true
+
+    assert not accepts(bexpr1, actions)
+
     bexpr2, _, input2var = aiger_bdd.to_bdd(
         expr, manager=manager, renamer=lambda _, x: x
     )
 
-    # TODO: check bexpr2 accepts actions.
+    assert accepts(bexpr2, actions)
+    assert not accepts(~bexpr2, actions)
 
     bexpr3 = xor(bexpr1, bexpr2)
-    # TODO: check bexpr3 toggles value of actions.
 
+    assert accepts(bexpr3, actions)
