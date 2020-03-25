@@ -21,7 +21,7 @@ def test_smoke():
     for i in range(order.total_bits*order.horizon):
         t = order.time_step(i)
         var = input2var.inv[manager.var_at_level(i)]
-        action, _, t2 = TIMED_INPUT_MATCHER.match(var).groups()
+        action, t2, _ = TIMED_INPUT_MATCHER.match(var).groups()
         assert t == int(t2)
         decision = action in spec.inputs
         assert decision == order.is_decision(i)
@@ -32,7 +32,7 @@ def test_smoke2():
 
     spec_circ = BV.aig2aigbv(spec.aig)
     mdp >>= C.circ2mdp(spec_circ)
-    output = spec_circ.omap[spec.output][0]
+    output = spec.output
 
     bdd, manager, input2var, order = to_bdd(mdp, horizon=3, output=output)
 
@@ -46,61 +46,61 @@ def test_smoke2():
     node = bdd
 
     assert bdd.bdd.let(translate({
-        'a[0]##time_0': True,
-        'c[0]##time_0': False,
-        'a[0]##time_1': True,
+        'a##time_0[0]': True,
+        'c##time_0[0]': False,
+        'a##time_1[0]': True,
     }), bdd) == bdd.bdd.false
 
     assert bdd.bdd.let(translate({
-        'a[0]##time_0': True,
-        'c[0]##time_0': True,
-        'a[0]##time_1': False,
+        'a##time_0[0]': True,
+        'c##time_0[0]': True,
+        'a##time_1[0]': False,
     }), bdd) == bdd.bdd.false
 
     assert node.low == bdd.bdd.false
 
     assert bdd.bdd.let(translate({
-        'a[0]##time_0': True,
-        'c[0]##time_0': True,
-        'a[0]##time_1': True,
-        'c[0]##time_1': True,
-        'a[0]##time_2': True,
-        'c[0]##time_2': True,
+        'a##time_0[0]': True,
+        'c##time_0[0]': True,
+        'a##time_1[0]': True,
+        'c##time_1[0]': True,
+        'a##time_2[0]': True,
+        'c##time_2[0]': True,
     }), bdd) == bdd.bdd.true
 
     assert bdd.bdd.let(translate({
-        'a[0]##time_0': True,
-        'c[0]##time_0': False,
-        'a[0]##time_1': False,
-        'c[0]##time_1': False,
-        'a[0]##time_2': False,
-        'c[0]##time_2': False,
+        'a##time_0[0]': True,
+        'c##time_0[0]': False,
+        'a##time_1[0]': False,
+        'c##time_1[0]': False,
+        'a##time_2[0]': False,
+        'c##time_2[0]': False,
     }), bdd) == bdd.bdd.true
 
     assert bdd.bdd.let(translate({
-        'c[0]##time_0': False,
-        'a[0]##time_1': True,
+        'c##time_0[0]': False,
+        'a##time_1[0]': True,
     }), bdd) == bdd.bdd.false
 
     assert bdd.bdd.let(translate({
-        'c[0]##time_0': True,
-        'a[0]##time_1': False,
+        'c##time_0[0]': True,
+        'a##time_1[0]': False,
     }), bdd) == bdd.bdd.false
 
     assert bdd.bdd.let(translate({
-        'c[0]##time_1': False,
-        'a[0]##time_2': True,
+        'c##time_1[0]': False,
+        'a##time_2[0]': True,
     }), bdd) == bdd.bdd.false
 
     assert bdd.bdd.let(translate({
-        'c[0]##time_1': True,
-        'a[0]##time_2': False,
+        'c##time_1[0]': True,
+        'a##time_2[0]': False,
     }), bdd) == bdd.bdd.false
 
     assert bdd.bdd.let(translate({
-        'c[0]##time_2': False,
+        'c##time_2[0]': False,
     }), bdd) == bdd
 
     assert bdd.bdd.let(translate({
-        'c[0]##time_2': True,
+        'c##time_2[0]': True,
     }), bdd) == bdd

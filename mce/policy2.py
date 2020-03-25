@@ -130,7 +130,7 @@ def policy(mdp, spec, horizon, coeff=None, manager=None, psat=None):
         coeff = 0
 
     monitor = spec if isinstance(spec, BV.AIGBV) else BV.aig2aigbv(spec.aig)
-    output = monitor.omap[fn.first(monitor.outputs)][0]
+    output = fn.first(monitor.outputs)
     composed = mdp >> C.circ2mdp(monitor)
 
     # HACK. TODO fix. Remove extra outputs.
@@ -204,7 +204,7 @@ class Policy:
             var = self.tbl.bdd.bdd.var_at_level(lvl)
             t1 = self.order.time_step(lvl)
 
-            name, idx, t2 = TIMED_INPUT_MATCHER.match(var).groups()
+            name, t2, idx = TIMED_INPUT_MATCHER.match(var).groups()
             assert t1 == int(t2)
             yield trc[t1][name][int(idx)]
 

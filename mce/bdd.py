@@ -1,5 +1,6 @@
 import re
 
+import attr
 import aiger_bv
 import aiger_bdd
 import funcy as fn
@@ -7,19 +8,21 @@ import funcy as fn
 from mce.order import BitOrder
 
 
-TIMED_INPUT_MATCHER = re.compile(r'(.*)\[(\d+)\]##time_(\d+)')
+TIMED_INPUT_MATCHER = re.compile(r'(.*)##time_(\d+)\[(\d+)\]')
 
 
 def to_bdd(mdp, horizon, output=None, manager=None):
     circ = mdp.aigbv
 
-    if '##valid' in circ.inputs:  # TODO: handle ##valid.
+    if '##valid' in circ.outputs:  # TODO: handle ##valid.
         circ >>= aiger_bv.sink(1, ['##valid'])
 
     unrolled = circ.unroll(horizon, only_last_outputs=True)  # HACK
 
     if output is not None:
-        output = f"{output}##time_{horizon}"
+        bdl = unrolled.omap[f"{output}##time_{horizon}"]
+        assert bdl.size == 1
+        output = bdl[0]
 
     inputs, env_inputs = mdp.inputs, circ.inputs - mdp.inputs
     imap = circ.imap
