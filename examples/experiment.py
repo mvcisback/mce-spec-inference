@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from itertools import product
 
 import aiger as A
