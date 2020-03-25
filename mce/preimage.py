@@ -27,13 +27,15 @@ def gen_equiv_checks(aps: AtomicPreds) -> Iterable[BVExpr]:
             yield sym == sym_val
 
 
-def preimage(aps: AtomicPreds, mdp: BV.AIGBV) -> BVExpr:
+def preimage(aps: AtomicPreds, mdp: BV.AIGBV, is_unrolled=False) -> BVExpr:
     """
     Returns a circuit which checks if an action sequence results in a
     given sequence of observations/atomic predicates (aps).
     """
     assert len(aps) > 1
-    unrolled = mdp.unroll(len(aps))
+
+    unrolled = mdp if is_unrolled else mdp.unroll(len(aps)) 
+        
     check_val = reduce(op.and_, gen_equiv_checks(aps)).aigbv
 
     test = unrolled >> check_val
