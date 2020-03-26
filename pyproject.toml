@@ -20,6 +20,8 @@ attrs = "^19.3"
 funcy = "^1.13"
 fold-bdd = "^0.6.0"
 multiprocess = "^0.70.9"
+bdd2dfa = "^0.3.0"
+dfa = {version = "^2.0.0", extras = ["draw"]}
 
 [tool.poetry.dev-dependencies]
 codecov = "^2.0"

@@ -18,6 +18,11 @@ def xor(x, y):
 
 @attr.s(frozen=True, auto_attribs=True)
 class ConcreteSpec:
+    """
+    Models an concrete specification over sequences of
+    system/environment action pairs encoded as bitvectors.
+    """
+
     bexpr: "BDD"
     order: BitOrder  # TODO: Make this a derived quantity.
     dyn: BV.AIGBV
@@ -65,7 +70,7 @@ class ConcreteSpec:
         bexpr, *_ = aiger_bdd.to_bdd(
             expr, manager=self.manager, renamer=lambda _, x: x
         )
-        
+
         return attr.evolve(self, bexpr=xor(self.bexpr, bexpr))
 
     @fn.cache(60 * 5)  # Evict after 5 minutes.
