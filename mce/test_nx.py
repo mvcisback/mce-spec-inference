@@ -14,7 +14,6 @@ def test_spec2graph():
     cspec = concretize(monitor, sys, 3)
 
     graph, root = spec2graph(cspec)
-    nx_pydot.write_dot(graph, "foo2.dot")
 
     assert len(graph.nodes) == 9
     assert len(graph.edges) == 14

@@ -1,7 +1,8 @@
+from fractions import Fraction
+
 import attr
 import funcy as fn
 import networkx as nx
-
 from bdd2dfa.b2d import to_dfa
 
 from mce.spec import ConcreteSpec
@@ -49,6 +50,7 @@ def spec2graph(spec: ConcreteSpec) -> nx.DiGraph:
             state2 = dfa._transition(state, action)
             node2 = _node(state2)
             stack.append((state2, node2))
-            g.add_edge(node, node2, action=action)
+            prob = None if node.is_decision else Fraction(1, 2)
+            g.add_edge(node, node2, action=action, prob=prob)
 
     return g, root
