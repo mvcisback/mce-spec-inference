@@ -2,12 +2,10 @@ import aiger_bv as BV
 import aiger_coins as C
 from networkx.drawing import nx_pydot
 
-
 from mce.test_scenarios import scenario_reactive
 from mce.spec import concretize
 
-from mce.qdd import spec2graph
-
+from mce.nx import spec2graph
 
 
 def test_spec2graph():

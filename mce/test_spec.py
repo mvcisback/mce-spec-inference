@@ -12,7 +12,6 @@ def act(action, coin):
 def test_concretize():
     spec, sys = scenario_reactive()
     monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-
     cspec = concretize(monitor, sys, 3)
 
     actions = [act(True, True), act(True, False), act(True, True)]
