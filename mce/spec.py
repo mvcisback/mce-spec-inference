@@ -51,11 +51,12 @@ class ConcreteSpec:
         manager = self.manager
 
         timed_actions = {}
+        bmap = self.imap + self.emap
         for t, action in enumerate(actions):
-            c, a = action['c'], action['a']
-            timed_actions.update(
-                {f'c##time_{t}[0]': c[0], f'a##time_{t}[0]': a[0]}
-            )
+            old2new = {k: f'{k}##time_{t}' for k in bmap.keys()}
+            bmap_t = bmap.relabel(old2new)
+            action_t = fn.walk_keys(old2new.get, action)
+            timed_actions.update(bmap_t.blast(action_t))
 
         assert timed_actions.keys() == manager.vars.keys()
         tmp = manager.let(timed_actions, self.bexpr)

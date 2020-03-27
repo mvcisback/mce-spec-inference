@@ -44,7 +44,7 @@ def spec2graph(spec: ConcreteSpec) -> nx.DiGraph:
 
         var = state.node.var
         if state.node.var is None:
-            var = spec.bexpr.bdd.true == state.node            
+            var = dfa._label(state)
 
         node = Node(
             var=var,

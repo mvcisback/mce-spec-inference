@@ -46,7 +46,7 @@ description = "Python library for converting binary decision diagrams to automat
 name = "bdd2dfa"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "0.3.0"
+version = "0.3.2"
 
 [package.dependencies]
 attrs = ">=19.3.0,<20.0.0"
@@ -820,7 +820,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "e740218a293e5509ba0f0e6c8f8c3cb2341062b933bc048180719045f5eba944"
+content-hash = "f6bc89cea7804ad53c8a3f2897614c7e964138fd073da53a184621eff3e0ff1f"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -840,8 +840,8 @@ attrs = [
     {file = "attrs-19.3.0.tar.gz", hash = "sha256:f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72"},
 ]
 bdd2dfa = [
-    {file = "bdd2dfa-0.3.0-py3-none-any.whl", hash = "sha256:587797fc4c80627a1f51af39791d41176fbd6709c80897c8f85198a5a3063e90"},
-    {file = "bdd2dfa-0.3.0.tar.gz", hash = "sha256:eb2210f2afe54bc3f8b117209b9b5a1c570c76f0de35e2484f7f1e72242613e3"},
+    {file = "bdd2dfa-0.3.2-py3-none-any.whl", hash = "sha256:152835e4e4b317a625b1ad42cb148eb5b821ece21b9a92600002f6a49496d11a"},
+    {file = "bdd2dfa-0.3.2.tar.gz", hash = "sha256:dd8d873560a3148d2fe6299c818c85e2140d39a46e0ac261625608734dd0ff55"},
 ]
 bidict = [
     {file = "bidict-0.18.3-py2.py3-none-any.whl", hash = "sha256:621db384daef94b7031897ca479f4feed025989a64e91c6fae88fb88a842488c"},
