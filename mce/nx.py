@@ -1,4 +1,4 @@
-from fractions import Fraction
+from typing import Union
 
 import attr
 import funcy as fn
@@ -10,47 +10,95 @@ from mce.spec import ConcreteSpec
 
 @attr.s(frozen=True, auto_attribs=True, repr=False)
 class Node:
-    var: str
+    var: Union[str, bool]
     level: int
-    is_decision: bool
     id: int
+    decision: int
 
     def __repr__(self):
-        template = "{}\n----\nlevel={}\nid={}\ndecision={}"
-        return template.format(self.var, self.level, self.id, self.is_decision)
+        template = "{}\n----\nlevel={}\nid={}\nis_decision={}"
+        return template.format(self.var, self.level, self.id, self.decision)
 
 
 def spec2graph(spec: ConcreteSpec) -> nx.DiGraph:
     dfa = to_dfa(spec.bexpr, qdd=False)
 
+    def is_sink(state) -> bool:
+        return state.node.var is None
+
+    def is_decision(state) -> bool:
+        lvl = state.node.level
+        return spec.order.is_decision(lvl)
+
+
+    def merge(dists):
+        return fn.merge_with(lambda xs: sum(xs)/2, *dists)
+
     count = 0
+    sinks = []
 
     @fn.memoize
     def _node(state):
         nonlocal count
         count += 1
-        return Node(
-            var=state.node.var,
-            is_decision=spec.order.is_decision(state.node.level), 
+
+        var = state.node.var
+        if state.node.var is None:
+            var = spec.bexpr.bdd.true == state.node            
+
+        node = Node(
+            var=var,
+            id=count, 
             level=state.node.level,
-            id=count,
+            decision=is_decision(state) and not is_sink(state)
         )
+
+        if state.node.var is None:
+            sinks.append(node)
+
+        return node
 
     g = nx.DiGraph()
 
-    root = _node(dfa.start)
-    stack = [(dfa.start, root)]
-    while len(stack) > 0:
-        state, node = stack.pop()
+    @fn.memoize
+    def build(state):
+        if is_sink(state):            
+            return {state: 1}
 
-        if node.var is None:  # Leaf in BDD.
-            continue
+        action2succ = {a: dfa._transition(state, a) for a in dfa.inputs}
+        action2dist = {a: build(s) for a, s in action2succ.items()}
 
-        for action in dfa.inputs:
-            state2 = dfa._transition(state, action)
-            node2 = _node(state2)
-            stack.append((state2, node2))
-            prob = None if node.is_decision else Fraction(1, 2)
-            g.add_edge(node, node2, action=action, prob=prob)
+        if not is_decision(state):
+            return merge(action2dist.values())
 
-    return g, root
+        for action, succ in action2succ.items():
+            g.add_edge(_node(state), _node(succ), action=action, label=None)
+
+            if is_decision(succ):
+                continue
+
+            for state2, weight in action2dist[action].items():
+                g.add_edge(
+                    _node(succ), _node(state2), action=None, label=weight
+                )
+
+        return {state: 1}    
+
+    build(dfa.start)
+
+    # Add dummy sink node so there is a unique start and end to the graph.
+    assert len(sinks) == 2
+    true, false = sinks
+    assert true.level == false.level
+    
+    dummy_sink = Node(
+        var=None,
+        id=count + 1, 
+        level=true.level + 1,
+        decision=False,
+    )    
+
+    g.add_edge(true, dummy_sink, action=None, label=1)
+    g.add_edge(false, dummy_sink, action=None, label=1)
+
+    return g, _node(dfa.start), dummy_sink
