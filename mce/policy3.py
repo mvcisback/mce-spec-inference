@@ -42,34 +42,27 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
             vals = np.array([graph.nodes[c]['val'] for c in kids])
             psats = np.array([graph.nodes[c]['psat'] for c in kids])
 
-            skipped = np.array([
-                spec.order.skipped_decisions(node.level, c.level) for c in kids
-            ])
-
-
             if not node.decision:
                 probs = np.array([graph[c][node]['label'] for c in kids])
-
-                # Note: This is arguably a bug in the model.
-                probs *= 2**skipped  # Account for compressed paths.
-
                 graph.nodes[node]['val'] = (probs * vals).sum()
                 graph.nodes[node]['psat'] = (probs * psats).sum()
                 continue
 
+            # Account for skipped decisions.
+            # Note: This is arguably a bug in the model.
+            skipped = np.array([
+                spec.order.skipped_decisions(node.level, c.level) for c in kids
+            ])
+
+            action_vals = vals + skipped * np.log(2)
             state_val = graph.nodes[node]['val'] = logsumexp(vals)
-            probs = []
-            for k, child in zip(skipped, kids):
-                action_val = graph.nodes[child]['val']
+            action_probs = np.exp(action_vals - state_val)
 
-                # Note: This is arguably a bug in the model.
-                action_val += k * np.log(2)  # Account for skipped paths.
+            # Add action_probs to edges. 
+            for prob, child in zip(action_probs, kids):
+                graph[child][node]['label'] = prob
 
-                prob_action = np.exp(action_val - state_val)
-                graph[child][node]['label'] = prob_action
-                probs.append(prob_action)
-
-            graph.nodes[node]['psat'] = (probs * psats).sum()
+            graph.nodes[node]['psat'] = (action_probs * psats).sum()
         
         return Policy(graph.reverse(copy=False), root=root)
 
