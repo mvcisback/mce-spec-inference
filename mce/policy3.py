@@ -21,7 +21,7 @@ class Policy:
 
     @property
     def psat(self) -> float:
-        return self.graph.nodes[self.root]['psat']        
+        return np.exp(self.graph.nodes[self.root]['lsat'])
 
 
 def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
@@ -35,34 +35,32 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
         for node in fn.rest(nx.topological_sort(graph)):
             if isinstance(node.var, bool):
                 graph.nodes[node]['val'] = coeff*int(node.var)                
-                graph.nodes[node]['psat'] = int(node.var)
+                graph.nodes[node]['lsat'] = 0 if node.var else -float('inf')
                 continue
                 
             kids = [c for (c, _) in graph.in_edges(node)]
             vals = np.array([graph.nodes[c]['val'] for c in kids])
-            psats = np.array([graph.nodes[c]['psat'] for c in kids])
+            lsats = np.array([graph.nodes[c]['lsat'] for c in kids])
 
             if not node.decision:
                 probs = np.array([graph[c][node]['label'] for c in kids])
                 graph.nodes[node]['val'] = (probs * vals).sum()
-                graph.nodes[node]['psat'] = (probs * psats).sum()
-                continue
+            else:
+                # Account for skipped decisions.
+                # Note: This is arguably a bug in the model.
+                skipped = np.array([
+                    spec.order.skipped_decisions(node.level, c.level) for c in kids
+                ])
+                vals = vals + skipped * np.log(2)
 
-            # Account for skipped decisions.
-            # Note: This is arguably a bug in the model.
-            skipped = np.array([
-                spec.order.skipped_decisions(node.level, c.level) for c in kids
-            ])
+                state_val = graph.nodes[node]['val'] = logsumexp(vals)
+                probs = np.exp(vals - state_val)
 
-            action_vals = vals + skipped * np.log(2)
-            state_val = graph.nodes[node]['val'] = logsumexp(vals)
-            action_probs = np.exp(action_vals - state_val)
+                # Add action_probs to edges. 
+                for prob, child in zip(probs, kids):
+                    graph[child][node]['label'] = prob
 
-            # Add action_probs to edges. 
-            for prob, child in zip(action_probs, kids):
-                graph[child][node]['label'] = prob
-
-            graph.nodes[node]['psat'] = (action_probs * psats).sum()
+            graph.nodes[node]['lsat'] = logsumexp(lsats, b=probs)
         
         return Policy(graph.reverse(copy=False), root=root)
 

@@ -3,6 +3,8 @@ import pytest
 import aiger_bv as BV
 import aiger_coins as C
 import funcy as fn
+import networkx as nx
+import numpy as np
 from networkx.drawing.nx_pydot import write_dot
 
 from mce.test_scenarios import scenario_reactive
@@ -34,9 +36,24 @@ def test_policy():
     assert all(x >= y for x, y in fn.with_prev(psats, 0))
 
 
+def test_policy_markov_chain():
+    spec, sys = scenario_reactive()
+    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
+    cspec = concretize(monitor, sys, 3)
+
+    graph = policy(cspec, 3).graph
+    adj = nx.adjacency_matrix(graph, weight="label")
+
+    assert adj[-1].sum() == 0  # Sink state.
+
+    row_sums = adj[:-1].sum(axis=1)
+    assert np.allclose(row_sums, np.ones_like(row_sums))
+
+
 def test_fit():
     spec, sys = scenario_reactive()
     monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
     cspec = concretize(monitor, sys, 3)
 
     assert fit(cspec, 0.7).psat == pytest.approx(0.7)
+
