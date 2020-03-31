@@ -21,6 +21,7 @@ class BitPolicy:
     graph: nx.DiGraph
     root: Hashable
     sinks: Tuple[Hashable] = attr.ib(converter=tuple)
+    spec: ConcreteSpec
 
     @property
     def psat(self) -> float:
@@ -130,7 +131,9 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
 
             graph.nodes[node]['lsat'] = logsumexp(lsats, b=probs)
         
-        return BitPolicy(graph.reverse(copy=False), root=root, sinks=sinks)
+        return BitPolicy(
+            graph=graph.reverse(copy=False), root=root, sinks=sinks, spec=spec
+        )
 
     if coeff is None:
         return ppolicy
