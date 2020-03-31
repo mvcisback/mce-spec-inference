@@ -15,8 +15,8 @@ def test_spec2graph():
 
     graph, root, sink = spec2graph(cspec)
 
-    assert len(graph.nodes) == 10
-    assert len(graph.edges) == 16
+    assert len(graph.nodes) == 9
+    assert len(graph.edges) == 14
 
     for node in graph.nodes:
         assert graph.out_degree[node] <= 2
@@ -28,8 +28,8 @@ def test_spec2graph():
 
     graph, root, sink = spec2graph(cspec2)
 
-    assert len(graph.nodes) == 10
-    assert len(graph.edges) == 16
+    assert len(graph.nodes) == 9
+    assert len(graph.edges) == 14
 
     for node in graph.nodes:
         assert graph.out_degree[node] <= 2

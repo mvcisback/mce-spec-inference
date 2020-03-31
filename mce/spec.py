@@ -1,4 +1,6 @@
-from typing import FrozenSet
+__all__ = ["ConcreteSpec", "concretize"]
+
+from typing import FrozenSet, Sequence
 
 import attr
 import aiger_bdd
@@ -6,6 +8,9 @@ import aiger_bv as BV
 import aiger_coins as C
 import funcy as fn
 from aiger_bv.bundle import BundleMap
+from bdd2dfa.b2d import to_dfa, BNode
+from bidict import bidict
+from dfa import DFA
 
 from mce.preimage import preimage
 from mce.order import BitOrder
@@ -46,8 +51,11 @@ class ConcreteSpec:
     def manager(self):
         return self.bexpr.bdd
 
-    def accepts(self, actions) -> bool:
-        """Does this spec accept the given sequence of (sys, env) actions."""
+    def flatten(self, actions) -> Sequence[bool]:
+        """
+        Converts structured sequence of (sys, env) actions to a
+        sequence of bits that this concrete specification recognizes.
+        """
         manager = self.manager
 
         timed_actions = {}
@@ -58,10 +66,14 @@ class ConcreteSpec:
             action_t = fn.walk_keys(old2new.get, action)
             timed_actions.update(bmap_t.blast(action_t))
 
-        assert timed_actions.keys() == manager.vars.keys()
-        tmp = manager.let(timed_actions, self.bexpr)
-        assert tmp in (manager.true, manager.false)
-        return tmp == manager.true
+        idx2key = bidict(self.bexpr.bdd.vars).inv
+        return [timed_actions[idx2key[i]] for i in range(len(idx2key))]
+        
+    def accepts(self, actions) -> bool:
+        """Does this spec accept the given sequence of (sys, env) actions."""
+        flattened = self.flatten(actions)
+        assert len(flattened) == self.order.horizon * self.order.total_bits
+        return self._as_dfa().label(flattened)
 
     def toggle(self, actions):
         """Toggles a sequence of (sys, env) actions."""
@@ -77,6 +89,18 @@ class ConcreteSpec:
     @fn.cache(60 * 5)  # Evict after 5 minutes.
     def _unrolled(self) -> BV.AIGBV:
         return self.dyn.unroll(self.horizon)
+
+    @fn.cache(60 * 1)  # Evict after 1 minute.
+    def _as_dfa(self) -> DFA:
+        """
+        Returns a dfa with binary alphabet which models the
+        ConcreteSpecification with the order given by self.bexpr.
+        """
+        return to_dfa(self.bexpr, qdd=False)
+
+    def abstract_trace(self, actions) -> Sequence[BNode]:
+        """Path a set of (sys, env) actions takes through BDD."""
+        return self._as_dfa().trace(self.flatten(actions))
 
 
 def concretize(

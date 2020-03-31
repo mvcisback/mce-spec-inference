@@ -1,27 +1,40 @@
-from typing import Union
+from typing import Optional
 
 import attr
 import funcy as fn
 import networkx as nx
-from bdd2dfa.b2d import to_dfa
+from bdd2dfa.b2d import to_dfa, BNode
 
 from mce.spec import ConcreteSpec
 
 
 @attr.s(frozen=True, auto_attribs=True, repr=False)
-class Node:
-    var: Union[str, bool]
-    level: int
-    id: int
-    decision: int
+class Node(BNode):
+    decision: bool = False
 
     def __repr__(self):
         template = "{}\n----\nlevel={}\nid={}\nis_decision={}"
         return template.format(self.var, self.level, self.id, self.decision)
 
+    @property
+    def id(self) -> int:
+        return self.node.ref
+
+    @property
+    def level(self) -> int:
+        return self.node.level
+
+    @property
+    def var(self) -> Optional[str]:
+        return self.label() if self.node.var is None else self.node.var
+
+    @property
+    def is_leaf(self):
+        return self.node.var is None
+
 
 def spec2graph(spec: ConcreteSpec) -> nx.DiGraph:
-    dfa = to_dfa(spec.bexpr, qdd=False)
+    dfa = spec._as_dfa()
 
     def is_sink(state) -> bool:
         return state.node.var is None
@@ -30,30 +43,17 @@ def spec2graph(spec: ConcreteSpec) -> nx.DiGraph:
         lvl = state.node.level
         return spec.order.is_decision(lvl)
 
-
     def merge(dists):
         return fn.merge_with(lambda xs: sum(xs)/2, *dists)
 
-    count = 0
     sinks = []
 
     @fn.memoize
     def _node(state):
-        nonlocal count
-        count += 1
+        decision = is_decision(state) and not is_sink(state)
+        node = Node(decision=decision, **state.__dict__)
 
-        var = state.node.var
-        if state.node.var is None:
-            var = dfa._label(state)
-
-        node = Node(
-            var=var,
-            id=count, 
-            level=state.node.level,
-            decision=is_decision(state) and not is_sink(state)
-        )
-
-        if state.node.var is None:
+        if node.is_leaf:
             sinks.append(node)
 
         return node
@@ -86,19 +86,4 @@ def spec2graph(spec: ConcreteSpec) -> nx.DiGraph:
 
     build(dfa.start)
 
-    # Add dummy sink node so there is a unique start and end to the graph.
-    assert len(sinks) == 2
-    true, false = sinks
-    assert true.level == false.level
-    
-    dummy_sink = Node(
-        var=None,
-        id=count + 1, 
-        level=true.level + 1,
-        decision=False,
-    )    
-
-    g.add_edge(true, dummy_sink, action=None, label=1)
-    g.add_edge(false, dummy_sink, action=None, label=1)
-
-    return g, _node(dfa.start), dummy_sink
+    return g, _node(dfa.start), sinks
