@@ -29,6 +29,10 @@ class BitPolicy:
         Probability of satisfying the underlying concrete
         specification using this policy.
         """
+        # TODO: consider implementing using log stochastic matrix.
+        # https://stackoverflow.com/questions/36467022/
+        # handling-matrix-multiplication-in-log-space-in-python
+
         return np.exp(self.graph.nodes[self.root]['lsat'])
 
     def __getitem__(self, node_pair):
@@ -38,7 +42,7 @@ class BitPolicy:
         
     def prob(self, node, node2, log=False) -> float:
         """Probability of transition from node to node2."""
-        prob = self[node, node2]['label']
+        prob = self[node, node2]['prob']
         return np.log(prob) if log else prob
 
     def action(self, node, node2) -> Optional[bool]:
@@ -78,13 +82,14 @@ class BitPolicy:
         Note that true and false have self loops added to make the
         matrix stochastic.
         """
-        false, true = sorted(self.sinks, key=lambda x: int(x.var))
+        var = lambda x: self.graph.nodes(data=True)[x]['var']
+        false, true = sorted(self.sinks, key=var)
 
         # Get nodes in correct order.
         nodes = [false, true, self.root]
         nodes += list(set(self.graph.nodes) - set(nodes))
 
-        mat = nx.adjacency_matrix(self.graph, nodes, weight="label")
+        mat = nx.adjacency_matrix(self.graph, nodes, weight="prob")
 
         # Make sink node self loop in stochastic matrix.
         mat[0, 0] = 1
@@ -99,26 +104,31 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
     @fn.cache(5)  # Cache results for 5 seconds.
     def ppolicy(coeff):
         graph = reference_graph.reverse(copy=True)
+        node_data = graph.nodes(data=True)
+
+        var = lambda x: graph.nodes(data=True)[x]['var']
+        lvl = lambda x: graph.nodes(data=True)[x]['lvl']
+        decision = lambda x: graph.nodes(data=True)[x]['decision']
 
         # Iterate in reverse topological order (ignoring dummy sink).
         for node in nx.topological_sort(graph):
-            if isinstance(node.var, bool):
-                graph.nodes[node]['val'] = coeff*int(node.var)                
-                graph.nodes[node]['lsat'] = 0 if node.var else -float('inf')
+            if isinstance(var(node), bool):
+                graph.nodes[node]['val'] = coeff*int(var(node))                
+                graph.nodes[node]['lsat'] = 0 if var(node) else -float('inf')
                 continue
                 
             kids = [c for (c, _) in graph.in_edges(node)]
             vals = np.array([graph.nodes[c]['val'] for c in kids])
             lsats = np.array([graph.nodes[c]['lsat'] for c in kids])
 
-            if not node.decision:
-                probs = np.array([graph[c][node]['label'] for c in kids])
+            if not decision(node):
+                probs = np.array([graph[c][node]['prob'] for c in kids])
                 graph.nodes[node]['val'] = (probs * vals).sum()
             else:
                 # Account for skipped decisions.
                 # Note: This is arguably a bug in the model.
                 skipped = np.array([
-                    spec.order.skipped_decisions(node.level, c.level) for c in kids
+                    spec.order.skipped_decisions(lvl(node), lvl(c)) for c in kids
                 ])
                 vals = vals + skipped * np.log(2)
 
@@ -127,7 +137,7 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
 
                 # Add action_probs to edges. 
                 for prob, child in zip(probs, kids):
-                    graph[child][node]['label'] = prob
+                    graph[child][node]['prob'] = prob
 
             graph.nodes[node]['lsat'] = logsumexp(lsats, b=probs)
         

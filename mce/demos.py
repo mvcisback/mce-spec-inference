@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import defaultdict
 from typing import Tuple, List, Sequence, Mapping
 
 import funcy as fn
@@ -17,49 +17,55 @@ Demos = List[Demo]
 AbstractDemo = Sequence[Mapping[str, bool]]
 AbstractDemos = Sequence[AbstractDemo]
 
-Edge = Tuple[Node, Node]
-Edges = Sequence[Tuple]
+Edge = Tuple[int, int]
 
 
-def demo_to_decision_edges(ctrl: BitPolicy, demo: AbstractDemo) -> Edges:
-    is_decision = ctrl.spec.order.is_decision
+def edge2bits(dfa, ctrl, bits):
+    refs = [x.ref for x in dfa.trace(bits)]
+    assert len(refs) == len(bits) + 1
+    assert refs[0] in ctrl.graph.nodes
 
-    def bnode2node(bnode: BNode) -> Node:
-        lvl = bnode.node.level
-        decision = is_decision(lvl) and bnode.node.var is not None
-        return Node(decision=decision, **bnode.__dict__)
+    curr, buff = refs[0], []
+    for ref, bit in zip(refs[1:], bits):
+        buff.append(int(bit))
 
-    demo = map(bnode2node, demo)
+        if ref not in ctrl.graph.nodes:
+            continue
+            
+        # Note first element of array  represents visitation count.
+        yield (curr, ref), np.array([1] + buff)
+        curr, buff = ref, []
 
-    for curr, prev in fn.rest(fn.with_prev(demo)):
-        edge = (prev, curr)
-        if edge in ctrl.graph.edges:
-            yield edge
 
+def demos2edge_dist(ctrl: BitPolicy, demos: Demos):
+    mapping = {}
+    dfa = ctrl.spec._as_dfa(qdd=True)
 
-def decision_edge_histograph(ctrl: BitPolicy, demos: Demos) -> Counter:
-    """Returns non-zero visitation counts of decision edges by demos."""
-    demos: AbstractDemos = map(ctrl.spec.abstract_trace, demos)
-    edges: Edges = [list(demo_to_decision_edges(ctrl, demo)) for demo in demos]
-    return Counter(fn.cat(edges))
+    for bits in map(ctrl.spec.flatten, demos):
+        # Update edge counts
+        mapping = fn.merge_with(sum, mapping, edge2bits(dfa, ctrl, bits))
+
+    def to_dist(x):
+        return x[1:] / x[0]
+
+    return fn.walk_values(to_dist, mapping)
 
 
 def annotate_surprise(ctrl: BitPolicy, demos: Demos):
-    mat, node2idx = ctrl.stochastic_matrix()
-    hist = decision_edge_histograph(ctrl, demos)
+    edge_dists = demos2edge_dist(ctrl, demos)
 
     for node in nx.topological_sort(ctrl.graph):
         out_edges = ctrl.graph.out_edges(node)
-        demos_at_node = sum(hist[e] for e  in out_edges)
 
         for edge in ctrl.graph.out_edges(node):
             # Compute rel entr between empirical edge distribution
             # and policy edge distribution.
-            if demos_at_node == 0:
-                dkl = 0
+
+            if edge not in edge_dists:
+                dkl = 0 
             else:
-                p_data = hist[edge] / demos_at_node
-                p_policy = ctrl.prob(*edge)
-                dkl = rel_entr([p_data], [p_policy])[0]
+                p_data = edge_dists[edge]
+                p_policy = [ctrl.prob(*edge)] + (len(p_data) - 1)*[0.5]
+                dkl = rel_entr(p_data, p_policy)[0]
 
             ctrl.graph[edge[0]][edge[1]]['rel_entr'] = dkl

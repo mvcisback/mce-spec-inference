@@ -47,18 +47,19 @@ def spec2graph(spec: ConcreteSpec) -> nx.DiGraph:
         return fn.merge_with(lambda xs: sum(xs)/2, *dists)
 
     sinks = []
+    g = nx.DiGraph()
 
     @fn.memoize
     def _node(state):
         decision = is_decision(state) and not is_sink(state)
         node = Node(decision=decision, **state.__dict__)
 
+        g.add_node(state.ref, lvl=node.level, var=node.var, decision=decision)
+
         if node.is_leaf:
-            sinks.append(node)
+            sinks.append(state.ref)
 
-        return node
-
-    g = nx.DiGraph()
+        return state.ref
 
     @fn.memoize
     def build(state):
@@ -72,18 +73,20 @@ def spec2graph(spec: ConcreteSpec) -> nx.DiGraph:
             return merge(action2dist.values())
 
         for action, succ in action2succ.items():
-            g.add_edge(_node(state), _node(succ), action=action, label=None)
+            g.add_edge(_node(state), _node(succ), action=action, prob=None)
 
             if is_decision(succ):
                 continue
 
-            for state2, weight in action2dist[action].items():
+            for state2, prob in action2dist[action].items():
                 g.add_edge(
-                    _node(succ), _node(state2), action=None, label=weight
+                    _node(succ), _node(state2), action=None, prob=prob
                 )
 
         return {state: 1}    
 
     build(dfa.start)
+
+    g = nx.freeze(g)
 
     return g, _node(dfa.start), sinks

@@ -20,11 +20,12 @@ def test_bdd_trace():
     actions = [act(True, True), act(True, False), act(True, True)]
     ctrl = fit(cspec, 3)
     annotate_surprise(ctrl, [actions]*3)
-    adj = nx.adjacency_matrix(ctrl.graph, weight="rel_entr")
+    adj1 = nx.adjacency_matrix(ctrl.graph, weight="rel_entr")
 
     actions = [act(True, True), act(True, False), act(False, True)]
     ctrl = fit(cspec, 3)
-    adj = nx.adjacency_matrix(ctrl.graph, weight="rel_entr")
     annotate_surprise(ctrl, [actions]*3)
+    adj2 = nx.adjacency_matrix(ctrl.graph, weight="rel_entr")
 
-
+    assert adj1.sum() > adj2.sum()
+    

@@ -28,7 +28,7 @@ def test_policy():
         for node in graph.nodes:
             assert graph.out_degree[node] <= 2
 
-            prob = sum(graph[x][y]['label'] for x, y in graph.out_edges(node))
+            prob = sum(graph[x][y]['prob'] for x, y in graph.out_edges(node))
             assert pytest.approx(prob, 1)
 
     pctrl = policy(cspec)
@@ -84,6 +84,10 @@ def test_fit():
     cspec = concretize(monitor, sys, 3)
 
     assert fit(cspec, 0.7).psat == pytest.approx(0.7)
+
+    from mce.draw import draw
+    ctrl = fit(cspec, 0.7)
+    draw(ctrl.graph, 'foo.dot')
 
 
 def test_sample_smoke():

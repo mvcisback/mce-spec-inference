@@ -37,6 +37,8 @@ termplotlib = "^0.2.4"
 blessings = "^1.7"
 dd2nx = "^0.1.2"
 py-aiger-ptltl = "^1.2.0"
+matplotlib = "^3.2.1"
+pygraphviz = "^1.5"
 
 [build-system]
 requires = ["poetry>=0.12"]

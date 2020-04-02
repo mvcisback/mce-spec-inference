@@ -73,7 +73,7 @@ class ConcreteSpec:
         """Does this spec accept the given sequence of (sys, env) actions."""
         flattened = self.flatten(actions)
         assert len(flattened) == self.order.horizon * self.order.total_bits
-        return self._as_dfa().label(flattened)
+        return self._as_dfa(qdd=True).label(flattened)
 
     def toggle(self, actions):
         """Toggles a sequence of (sys, env) actions."""
@@ -91,12 +91,12 @@ class ConcreteSpec:
         return self.dyn.unroll(self.horizon)
 
     @fn.cache(60 * 1)  # Evict after 1 minute.
-    def _as_dfa(self) -> DFA:
+    def _as_dfa(self, qdd=False) -> DFA:
         """
         Returns a dfa with binary alphabet which models the
         ConcreteSpecification with the order given by self.bexpr.
         """
-        return to_dfa(self.bexpr, qdd=False)
+        return to_dfa(self.bexpr, qdd=qdd)
 
     def abstract_trace(self, actions) -> Sequence[BNode]:
         """Path a set of (sys, env) actions takes through BDD."""
