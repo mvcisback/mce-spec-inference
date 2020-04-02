@@ -5,9 +5,8 @@ import funcy as fn
 import networkx as nx
 import numpy as np
 from bdd2dfa.b2d import BNode
-from scipy.special import rel_entr, logsumexp
+from scipy.special import logsumexp
 
-from mce.nx import Node
 from mce.policy3 import BitPolicy
 
 
@@ -26,14 +25,18 @@ def edge2bits(dfa, ctrl, bits):
     assert refs[0] in ctrl.graph.nodes
 
     curr, buff = refs[0], []
-    for ref, bit in zip(refs[1:], bits):
-        buff.append(int(bit))
+    for i, (ref, bit) in enumerate(zip(refs[1:], bits)):
+        # First bit always counts as one.
+        # Thus firs element of array represents visitation count.
+        buff.append(int(bit or (len(buff) == 0)))
+
+        if curr == ref:
+            break  # At sink
 
         if ref not in ctrl.graph.nodes:
             continue
-            
-        # Note first element of array  represents visitation count.
-        yield (curr, ref), np.array([1] + buff)
+
+        yield (i, (curr, ref)), np.array(buff)
         curr, buff = ref, []
 
 
@@ -45,14 +48,33 @@ def demos2edge_dist(ctrl: BitPolicy, demos: Demos):
         # Update edge counts
         mapping = fn.merge_with(sum, mapping, edge2bits(dfa, ctrl, bits))
 
-    def to_dist(x):
-        return x[1:] / x[0]
+    @fn.memoize
+    def node_count(time, node) -> int:
+        visited_edges = (
+            e for e in ctrl.graph.out_edges(node) if (time, e) in mapping
+        )
+        return sum(mapping[time, e][0] for e in visited_edges)
 
-    return fn.walk_values(to_dist, mapping)
+    def to_freq(timed_edge_counts):
+        (time, edge), counts = timed_edge_counts
+        freq = counts / node_count(time, edge[0])
+        assert 0 <= freq <= 1
+        return (time, edge), freq 
+
+    timed_edge_freqs = fn.walk(to_freq, mapping)
+
+    # Reindex in terms of edges.
+    return fn.group_values(
+        (e, (t, f)) for (t, e), f in timed_edge_freqs.items()
+    )
 
 
 def annotate_surprise(ctrl: BitPolicy, demos: Demos):
     edge_dists = demos2edge_dist(ctrl, demos)
+
+    def expected(edge):
+        """Probability of bits on edges perscribed by the policy."""
+        return fn.chain([ctrl.prob(*edge)], fn.repeat(0.5))
 
     for node in nx.topological_sort(ctrl.graph):
         out_edges = ctrl.graph.out_edges(node)
@@ -61,11 +83,12 @@ def annotate_surprise(ctrl: BitPolicy, demos: Demos):
             # Compute rel entr between empirical edge distribution
             # and policy edge distribution.
 
-            if edge not in edge_dists:
-                dkl = 0 
-            else:
-                p_data = edge_dists[edge]
-                p_policy = [ctrl.prob(*edge)] + (len(p_data) - 1)*[0.5]
-                dkl = rel_entr(p_data, p_policy)[0]
+            dkl = 0
+            for t, observed in edge_dists.get(edge, []):
+                for p_policy, p_data in zip(expected(edge), observed):
+                    if p_data == 0:
+                        continue
+
+                    dkl += p_data * (np.log(p_data) - np.log(p_policy))
 
             ctrl.graph[edge[0]][edge[1]]['rel_entr'] = dkl

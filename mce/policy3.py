@@ -152,6 +152,7 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
 
 
 def fit(cspec: ConcreteSpec, psat: float, top: float=100) -> BitPolicy:
+    assert 0 <= psat <= 1
     pctrl = policy(cspec)
 
     def f(coeff):

@@ -85,10 +85,6 @@ def test_fit():
 
     assert fit(cspec, 0.7).psat == pytest.approx(0.7)
 
-    from mce.draw import draw
-    ctrl = fit(cspec, 0.7)
-    draw(ctrl.graph, 'foo.dot')
-
 
 def test_sample_smoke():
     spec, sys = scenario_reactive()

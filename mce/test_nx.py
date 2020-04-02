@@ -15,6 +15,7 @@ def test_spec2graph():
 
     graph, root, sink = spec2graph(cspec)
 
+    # BDD size
     assert len(graph.nodes) == 9
     assert len(graph.edges) == 14
 
@@ -30,6 +31,9 @@ def test_spec2graph():
 
     assert len(graph.nodes) == 9
     assert len(graph.edges) == 14
+
+    from mce.draw import draw
+    draw(graph, 'foo.dot')
 
     for node in graph.nodes:
         assert graph.out_degree[node] <= 2
