@@ -87,6 +87,10 @@ def spec2graph(spec: ConcreteSpec) -> nx.DiGraph:
 
     build(dfa.start)
 
-    g = nx.freeze(g)
+    g.add_node("DUMMY", lvl=None, var=None, decision=False)
+    for sink in sinks:
+        g.add_edge(sink, "DUMMY", action=None, prob=1)
+
+    g = nx.freeze(g)    
 
     return g, _node(dfa.start), sinks

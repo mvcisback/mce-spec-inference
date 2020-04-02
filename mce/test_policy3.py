@@ -22,8 +22,8 @@ def test_policy():
     for i, ctrl in enumerate(ctrls):
         assert 0 <= ctrl.psat <= 1
         graph = ctrl.graph
-        assert len(graph.nodes) == 9
-        assert len(graph.edges) == 14
+        assert len(graph.nodes) == 10
+        assert len(graph.edges) == 16
 
         for node in graph.nodes:
             assert graph.out_degree[node] <= 2

@@ -20,7 +20,7 @@ from mce.nx import spec2graph
 class BitPolicy:
     graph: nx.DiGraph
     root: Hashable
-    sinks: Tuple[Hashable] = attr.ib(converter=tuple)
+    real_sinks: Tuple[Hashable] = attr.ib(converter=tuple)
     spec: ConcreteSpec
 
     @property
@@ -82,28 +82,37 @@ class BitPolicy:
         Note that true and false have self loops added to make the
         matrix stochastic.
         """
+        assert len(self.real_sinks) > 0
+
+        if len(self.real_sinks) == 1:
+            mat = sp.sparse.csr_matrix((1, 1))
+            mat[0, 0] = 1
+            return mat, bidict(enumerate(self.real_sinks))
+
         var = lambda x: self.graph.nodes(data=True)[x]['var']
-        false, true = sorted(self.sinks, key=var)
+        false, true = sorted(self.real_sinks, key=var)
 
         # Get nodes in correct order.
-        nodes = [false, true, self.root]
+        nodes = ["DUMMY", false, true, self.root]
         nodes += list(set(self.graph.nodes) - set(nodes))
 
         mat = nx.adjacency_matrix(self.graph, nodes, weight="prob")
+        mat = mat[1:, 1:]
 
         # Make sink node self loop in stochastic matrix.
         mat[0, 0] = 1
         mat[1, 1] = 1
 
-        return mat, bidict(enumerate(nodes))
+        return mat, bidict(enumerate(nodes[1:]))
 
 
 def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
-    reference_graph, root, sinks = spec2graph(spec)
+    reference_graph, root, real_sinks = spec2graph(spec)
 
     @fn.cache(5)  # Cache results for 5 seconds.
     def ppolicy(coeff):
         graph = reference_graph.reverse(copy=True)
+
         node_data = graph.nodes(data=True)
 
         var = lambda x: graph.nodes(data=True)[x]['var']
@@ -111,7 +120,7 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
         decision = lambda x: graph.nodes(data=True)[x]['decision']
 
         # Iterate in reverse topological order (ignoring dummy sink).
-        for node in nx.topological_sort(graph):
+        for node in fn.rest(nx.topological_sort(graph)):
             if isinstance(var(node), bool):
                 graph.nodes[node]['val'] = coeff*int(var(node))                
                 graph.nodes[node]['lsat'] = 0 if var(node) else -float('inf')
@@ -142,7 +151,8 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
             graph.nodes[node]['lsat'] = logsumexp(lsats, b=probs)
         
         return BitPolicy(
-            graph=graph.reverse(copy=False), root=root, sinks=sinks, spec=spec
+            graph=graph.reverse(copy=False), root=root, 
+            real_sinks=real_sinks, spec=spec
         )
 
     if coeff is None:

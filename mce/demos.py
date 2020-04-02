@@ -30,14 +30,14 @@ def edge2bits(dfa, ctrl, bits):
         # Thus firs element of array represents visitation count.
         buff.append(int(bit or (len(buff) == 0)))
 
-        if curr == ref:
-            break  # At sink
-
-        if ref not in ctrl.graph.nodes:
+        if (curr == ref) or (ref not in ctrl.graph.nodes):
             continue
 
         yield (i, (curr, ref)), np.array(buff)
         curr, buff = ref, []
+
+    if len(buff) != 0:
+        yield (i, (ref, "DUMMY")), np.array(buff)
 
 
 def demos2edge_dist(ctrl: BitPolicy, demos: Demos):

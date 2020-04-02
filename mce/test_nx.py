@@ -13,11 +13,11 @@ def test_spec2graph():
     monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
     cspec = concretize(monitor, sys, 3)
 
-    graph, root, sink = spec2graph(cspec)
+    graph, root, _ = spec2graph(cspec)
 
     # BDD size
-    assert len(graph.nodes) == 9
-    assert len(graph.edges) == 14
+    assert len(graph.nodes) == 10
+    assert len(graph.edges) == 16
 
     for node in graph.nodes:
         assert graph.out_degree[node] <= 2
@@ -27,10 +27,10 @@ def test_spec2graph():
     sys2 = C.coin((1, 4), 'c') >> C.MDP(sys.aigbv >> BV.sink(1, ['##valid']) )
     cspec2 = concretize(monitor, sys2, 3)
 
-    graph, root, sink = spec2graph(cspec2)
+    graph, root, _ = spec2graph(cspec2)
 
-    assert len(graph.nodes) == 9
-    assert len(graph.edges) == 14
+    assert len(graph.nodes) == 10
+    assert len(graph.edges) == 16
 
     from mce.draw import draw
     draw(graph, 'foo.dot')
