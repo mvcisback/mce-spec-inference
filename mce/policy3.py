@@ -31,9 +31,14 @@ class BitPolicy:
         """
         return np.exp(self.lsat)
         
-    def prob(self, node, action, log=False) -> float:
-        """Probability of transition from node to node2."""
-        prob = self.ref2action_dist[node][action]
+    def prob(self, node, action, log=False, qdd=False) -> float:
+        """Probability of agent applying action given bdd node."""
+        if qdd:
+            node, debt = node
+            if debt > 0:
+                return 0.5
+
+        prob = self.ref2action_dist.get(node, {True: 0.5, False: 0.5})[action]
         return np.log(prob) if log else prob
 
     def markov_chain(self):

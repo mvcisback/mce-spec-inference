@@ -20,20 +20,14 @@ def test_bdd_trace():
     actions = [act(True, True), act(True, False), act(True, True)]
     assert not cspec.accepts(actions)
     ctrl = fit(cspec, 0.7)
-    annotate_surprise(ctrl, [actions]*3)
-    adj1 = nx.adjacency_matrix(ctrl.graph, weight="rel_entr")
-
-    from mce.draw import draw
-    draw(ctrl.graph, 'foo1.dot')
+    graph, root, sinks = annotate_surprise(ctrl, [actions]*3)
+    adj1 = nx.adjacency_matrix(graph, weight="rel_entr")
 
     actions = [act(True, True), act(True, False), act(False, True)]
     assert cspec.accepts(actions)
     ctrl = fit(cspec, 0.9)
-    annotate_surprise(ctrl, [actions]*3)
-    adj2 = nx.adjacency_matrix(ctrl.graph, weight="rel_entr")
-
-    draw(ctrl.graph, 'foo2.dot')
-
+    graph, root, sinks = annotate_surprise(ctrl, [actions]*3)
+    adj2 = nx.adjacency_matrix(graph, weight="rel_entr")
 
     assert adj1.sum() > adj2.sum()
 

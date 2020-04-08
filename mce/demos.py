@@ -19,76 +19,41 @@ AbstractDemos = Sequence[AbstractDemo]
 Edge = Tuple[int, int]
 
 
-def edge2bits(dfa, ctrl, bits):
-    refs = [x.ref for x in dfa.trace(bits)]
-    assert len(refs) == len(bits) + 1
-    assert refs[0] in ctrl.graph.nodes
-
-    curr, buff = refs[0], []
-    for i, (ref, bit) in enumerate(zip(refs[1:], bits)):
-        # First bit always counts as one.
-        # Thus firs element of array represents visitation count.
-        buff.append(int(bit or (len(buff) == 0)))
-
-        if (curr == ref) or (ref not in ctrl.graph.nodes):
-            continue
-
-        yield (i, (curr, ref)), np.array(buff)
-        curr, buff = ref, []
-
-    if len(buff) != 0:
-        yield (i, (ref, "DUMMY")), np.array(buff)
-
-
-def demos2edge_dist(ctrl: BitPolicy, demos: Demos):
-    mapping = {}
+def node2observed_bias(ctrl: BitPolicy, demos: Demos):
     dfa = ctrl.spec._as_dfa(qdd=True)
 
-    for bits in map(ctrl.spec.flatten, demos):
-        # Update edge counts
-        mapping = fn.merge_with(sum, mapping, edge2bits(dfa, ctrl, bits))
+    def trace(actions):
+        bits = ctrl.spec.flatten(actions)
+        trc = ((s.ref, s.debt) for s in dfa.trace(bits))
+        return zip(trc, bits)
 
-    @fn.memoize
-    def node_count(time, node) -> int:
-        visited_edges = (
-            e for e in ctrl.graph.out_edges(node) if (time, e) in mapping
-        )
-        return sum(mapping[time, e][0] for e in visited_edges)
+    traces = fn.mapcat(trace, demos)
+    node2actions = fn.group_values(traces)
 
-    def to_freq(timed_edge_counts):
-        (time, edge), counts = timed_edge_counts
-        freq = counts / node_count(time, edge[0])
-        assert 0 <= freq <= 1
-        return (time, edge), freq 
-
-    timed_edge_freqs = fn.walk(to_freq, mapping)
-
-    # Reindex in terms of edges.
-    return fn.group_values(
-        (e, (t, f)) for (t, e), f in timed_edge_freqs.items()
-    )
+    return fn.walk_values(np.mean, node2actions)
 
 
 def annotate_surprise(ctrl: BitPolicy, demos: Demos):
-    edge_dists = demos2edge_dist(ctrl, demos)
+    observed_bias = node2observed_bias(ctrl, demos)
 
-    def expected(edge):
-        """Probability of bits on edges perscribed by the policy."""
-        return fn.chain([ctrl.prob(*edge)], fn.repeat(0.5))
+    graph, root, real_sinks = ctrl.markov_chain()
+    for node in nx.topological_sort(graph):
+        for node2 in graph.neighbors(node):
+            action = graph.edges[node, node2]['action']
 
-    for node in nx.topological_sort(ctrl.graph):
-        out_edges = ctrl.graph.out_edges(node)
+            if (node not in observed_bias) or (node in real_sinks):
+                surprise = 0
+            else:
+                observed = observed_bias[node]
+                if not action:
+                    observed = 1 - observed   # Bias is prob of action = True.
 
-        for edge in ctrl.graph.out_edges(node):
-            # Compute rel entr between empirical edge distribution
-            # and policy edge distribution.
+                if observed == 0:
+                    surprise = 0
+                else:
+                    expected = ctrl.prob(node, action, qdd=True)
+                    surprise = observed * (np.log(observed) - np.log(expected))
 
-            dkl = 0
-            for t, observed in edge_dists.get(edge, []):
-                for p_policy, p_data in zip(expected(edge), observed):
-                    if p_data == 0:
-                        continue
+            graph.edges[node, node2]['rel_entr'] = surprise
 
-                    dkl += p_data * (np.log(p_data) - np.log(p_policy))
-
-            ctrl.graph[edge[0]][edge[1]]['rel_entr'] = dkl
+    return graph, root, real_sinks
