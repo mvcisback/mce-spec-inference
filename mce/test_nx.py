@@ -10,8 +10,7 @@ from mce.nx import spec2graph
 
 def test_spec2graph():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
 
     graph, root, _ = spec2graph(cspec)
 
@@ -28,11 +27,10 @@ def test_spec2graph():
 
 def test_reweighted():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
 
     # Hack too re-weight coinl
     sys2 = C.coin((1, 4), 'c') >> C.MDP(sys.aigbv >> BV.sink(1, ['##valid']) )
-    cspec2 = concretize(monitor, sys2, 3)
+    cspec2 = concretize(spec, sys2, 3)
 
     graph, root, _ = spec2graph(cspec2)
 
@@ -46,8 +44,7 @@ def test_reweighted():
 
 def test_nx2qdd():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
 
     graph, root, _ = spec2graph(cspec, qdd=True)
 

@@ -30,15 +30,28 @@ class BitPolicy:
         specification using this policy.
         """
         return np.exp(self.lsat)
+
+    @property
+    def size(self) -> int:
+        """
+        Number of BDD nodes with non-uniform defined action
+        distributions.
+        """
+        return len(self.ref2action_dist)
         
     def prob(self, node, action, log=False, qdd=False) -> float:
         """Probability of agent applying action given bdd node."""
         if qdd:
             node, debt = node
-            if debt > 0:
-                return 0.5
+        else:
+            debt = 0
 
-        prob = self.ref2action_dist.get(node, {True: 0.5, False: 0.5})[action]
+        if debt > 0:
+            prob =  0.5
+        else:
+            uniform = {True: 0.5, False: 0.5}
+            prob = self.ref2action_dist.get(node, uniform)[action]
+        
         return np.log(prob) if log else prob
 
     def markov_chain(self):

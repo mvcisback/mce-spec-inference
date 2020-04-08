@@ -46,7 +46,7 @@ description = "Python library for converting binary decision diagrams to automat
 name = "bdd2dfa"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "0.4.0"
+version = "0.4.1"
 
 [package.dependencies]
 attrs = ">=19.3.0,<20.0.0"
@@ -480,7 +480,7 @@ description = "A python library for manipulating sequential and-inverter gates."
 name = "py-aiger"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "4.0.1"
+version = "4.0.2"
 
 [package.dependencies]
 attrs = ">=19.3,<20.0"
@@ -893,8 +893,8 @@ attrs = [
     {file = "attrs-19.3.0.tar.gz", hash = "sha256:f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72"},
 ]
 bdd2dfa = [
-    {file = "bdd2dfa-0.4.0-py3-none-any.whl", hash = "sha256:c8affa85f9839aacf315b9e32db25199991d630900956daa075a61329e4f556d"},
-    {file = "bdd2dfa-0.4.0.tar.gz", hash = "sha256:d6c02c37264b7bdf49109c690ba4750019cd49d1089987187279868554cbdf25"},
+    {file = "bdd2dfa-0.4.1-py3-none-any.whl", hash = "sha256:2fe075d66babea8310623878cb4ba8ef9191f8b0a1a10faf10d98c1579463426"},
+    {file = "bdd2dfa-0.4.1.tar.gz", hash = "sha256:8b51f6915ca29c0f148c5677fffda943ec27b4f4c5898572f64d6a7d5d9801a2"},
 ]
 bidict = [
     {file = "bidict-0.18.3-py2.py3-none-any.whl", hash = "sha256:621db384daef94b7031897ca479f4feed025989a64e91c6fae88fb88a842488c"},
@@ -1117,8 +1117,8 @@ py = [
     {file = "py-1.8.1.tar.gz", hash = "sha256:5e27081401262157467ad6e7f851b7aa402c5852dbcb3dae06768434de5752aa"},
 ]
 py-aiger = [
-    {file = "py-aiger-4.0.1.tar.gz", hash = "sha256:424a49ced5e9e0d59f7e25a5f85c78b437d2e35e746e2b0dc15cadf0a1bea804"},
-    {file = "py_aiger-4.0.1-py3-none-any.whl", hash = "sha256:76e56964b2da51775f5226bf5d4456574fe7fd3e2866c12d0e40e1b6bf7a8b27"},
+    {file = "py-aiger-4.0.2.tar.gz", hash = "sha256:c2d35e1a25979dd6d91c402a4b5813cf5d987b5e182c72a87eb026a4f5d0fc99"},
+    {file = "py_aiger-4.0.2-py3-none-any.whl", hash = "sha256:67dce653b77c276608488363890c154dce82c36b143bc50b92164c0e81751758"},
 ]
 py-aiger-bdd = [
     {file = "py-aiger-bdd-0.3.0.tar.gz", hash = "sha256:a4ebb6a109c52cd13725da36fb414c1e8743595c4e33e1ef4b210e92526c95e4"},

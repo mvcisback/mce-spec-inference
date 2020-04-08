@@ -15,8 +15,7 @@ from mce.policy3 import policy, fit
 
 def test_policy():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
 
     ctrls = [policy(cspec)(3), policy(cspec, 3)]
     for i, ctrl in enumerate(ctrls):
@@ -36,8 +35,7 @@ def test_policy():
 
 def test_policy_markov_chain():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
 
     ctrl = policy(cspec, 3)
     adj, _ = ctrl.stochastic_matrix()
@@ -51,8 +49,7 @@ def test_policy_markov_chain():
 
 def test_policy_markov_chain_psat():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
 
     adj, _ = fit(cspec, 0.7).stochastic_matrix()
 
@@ -77,16 +74,14 @@ def test_policy_markov_chain_psat():
 
 def test_fit():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
 
     assert fit(cspec, 0.7).psat == pytest.approx(0.7)
 
 
 def test_sample_smoke():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
     ctrl = policy(cspec, 3)
     list(ctrl.simulate())
 

@@ -1,54 +1,64 @@
 import time
 from multiprocess import Pool
 
+import aiger_ptltl as LTL
 import funcy as fn
+import networkx as nx
 
-from mce.policy2 import policy
+#from mce.policy2 import policy
+from mce.policy3 import fit
+from mce.spec import concretize
 from mce.utils import empirical_sat_prob
+from mce.demos import encode_trcs, log_likelihoods
 
 
 def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
     horizon = len(demos[0][0])
     specs = list(specs)
 
+    start_time = time.time()
+    print("encoding traces")
+    encoded_trcs = encode_trcs(mdp, demos)
+    print(f"done encoding traces")
+
     @fn.memoize
     def score(spec):
         start_time = time.time()
         times = {}
-        print("building policy")
-        ctrl = policy(mdp, spec, horizon=horizon, coeff=0)        
-        times["build"] = time.time() - start_time
-        print(f"done building policy")
 
-        start_time = time.time()
-        print("encoding traces")
-        encoded_trcs = ctrl.encode_trcs(demos)
-        print(f"done encoding traces")
-        times["encode"] = time.time() - start_time
+        print("concretizing spec")
+        cspec = concretize(spec, mdp, horizon)
+        print("done spec")
+        print(f"done fitting")
+        times["build spec"] = time.time() - start_time
 
         if psat is None:
-            sat_prob = empirical_sat_prob(spec, demos)
+            sat_prob = sum(cspec.accepts(trc) for trc in encoded_trcs)
+            sat_prob /= len(encoded_trcs)
         else:
             sat_prob = psat
 
         start_time = time.time()
-        print("fitting")
-        ctrl.fit(sat_prob)
+        print("fitting policy")
+        ctrl = fit(cspec, sat_prob)
         print(f"done fitting")
         times["fit"] = time.time() - start_time
 
         start_time = time.time()
-        print(f"compute likelihoods")
-        logl = sum(map(ctrl.log_likelihood_ratio, encoded_trcs))
-        times["trc_likelihood"] = time.time() - start_time
+        print(f"compute log likelihood of demos")
+        lprob = log_likelihoods(ctrl, encoded_trcs)
+        times["surprise"] = time.time() - start_time
 
         print("\n----------------------------\n")
-        print(f"ROBDD size: {ctrl.tbl.bdd.dag_size}")
-        print(f"TBL size: {len(ctrl.tbl.tbl)}")
+        print(f"BDD size: {cspec.bexpr.dag_size}")
+        print(f"Controller Size: {ctrl.size}")
+        print(f"log_prob: {lprob}")
         print("\n".join(f"{key}: {val:.2}s" for key, val in times.items()))
         print("\n----------------------------\n")
 
-        return logl
+        print(times)
+
+        return lprob
 
     if parallel:
         _specs = list(enumerate(specs))

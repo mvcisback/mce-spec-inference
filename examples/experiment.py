@@ -233,21 +233,25 @@ def infer():
     #mdp = C.circ2mdp(DYN)
     mdp = DYN2
     best, spec2score = spec_mle(
-        mdp, trcs, SPEC2MONITORS.values(), psat=0.98, parallel=False
+        mdp, trcs, SPEC2MONITORS.values(), parallel=True
     )
+    best_score = spec2score[best]
 
     fig = tpl.figure()
     fig.barh(
         fn.lmap(abs, spec2score.values()),
         labels=SPEC_NAMES,
-        force_ascii=True
+        force_ascii=False,
+        show_vals=False,
     )
 
     print('\n' + "="*80)
-    print('-LOG LIKELIHOODS'.rjust(40) + '\n')
-    print('(lower is better)'.rjust(41))
+    print('-log likelihood'.rjust(40) + '\n')
+    print('(higher is better)'.rjust(41))
     print("="*80)
     fig.show()
+    print(f"\n\nbest score: {abs(best_score)}")
+    
     return best
 
 

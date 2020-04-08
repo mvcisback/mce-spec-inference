@@ -104,12 +104,25 @@ class ConcreteSpec:
 
 
 def concretize(
-        monitor: C.MDP, sys: C.MDP, horizon: int, manager=None
+        monitor, sys: C.MDP, horizon: int, manager=None
 ) -> ConcreteSpec:
     """
     Convert an abstract specification monitor and a i/o transition
     system into a concrete specification over the horizion.
     """
+    # Make format correct.
+    if not isinstance(monitor, C.MDP):
+        assert hasattr(monitor, 'aig') or hasattr(monitor, 'aigbv')
+        if hasattr(monitor, 'aigbv'):
+            monitor = monitor.aigbv
+        else:
+            monitor = BV.aig2aigbv(monitor.aig)
+        monitor = C.MDP(monitor)
+
+    # Remove ignored outputs of sys.
+    for sym in (monitor.inputs ^ sys.outputs):
+        size = sys._aigbv.omap[sym].size
+        monitor >>= C.MDP(BV.sink(size, [sym]))    
 
     bexpr, manager, _, order = to_bdd(sys >> monitor, horizon)
     return ConcreteSpec(bexpr, order, sys_inputs=sys.inputs, dyn=sys.aigbv)

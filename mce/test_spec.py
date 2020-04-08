@@ -12,8 +12,7 @@ def act(action, coin):
 
 def test_concretize():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
 
     actions = [act(True, True), act(True, False), act(True, True)]
 
@@ -29,8 +28,7 @@ def test_concretize():
 
 def test_flatten():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
 
     actions = [act(True, True), act(True, False), act(True, True)]
     assert cspec.flatten(actions) == [True, True, True, False, True, True]
@@ -38,8 +36,7 @@ def test_flatten():
 
 def test_abstract_trace():
     spec, sys = scenario_reactive()
-    monitor = C.MDP(BV.aig2aigbv(spec.aig) | BV.sink(1, ['c_next']))
-    cspec = concretize(monitor, sys, 3)
+    cspec = concretize(spec, sys, 3)
 
     actions = [act(True, True), act(True, False), act(True, True)]
     trc = list(cspec.abstract_trace(actions))
