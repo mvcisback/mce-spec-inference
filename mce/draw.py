@@ -11,7 +11,7 @@ def label_edge(graph, edge):
     if data.get('action') is not None:
         label += f'a={data["action"]}\n'
     if data.get('rel_entr') is not None:
-        label += f's={data["rel_entr"]}\n'
+        label += f's={data["rel_entr"]:.2f}\n'
 
     data['label'] = label
 

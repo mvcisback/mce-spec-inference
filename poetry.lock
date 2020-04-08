@@ -46,7 +46,7 @@ description = "Python library for converting binary decision diagrams to automat
 name = "bdd2dfa"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "0.3.2"
+version = "0.4.0"
 
 [package.dependencies]
 attrs = ">=19.3.0,<20.0.0"
@@ -88,7 +88,7 @@ description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
 optional = false
 python-versions = "*"
-version = "2019.11.28"
+version = "2020.4.5.1"
 
 [[package]]
 category = "dev"
@@ -640,7 +640,7 @@ description = "Python parsing module"
 name = "pyparsing"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
-version = "2.4.6"
+version = "2.4.7"
 
 [[package]]
 category = "main"
@@ -873,7 +873,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "86875768f88a189f39ee42e178053a09e69bd1654ff8a7a0fed444ff1d02016f"
+content-hash = "5c86a64e19822823f0b41d67024a65cf90d885cf2ae618437c1be5d39e5c444b"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -893,8 +893,8 @@ attrs = [
     {file = "attrs-19.3.0.tar.gz", hash = "sha256:f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72"},
 ]
 bdd2dfa = [
-    {file = "bdd2dfa-0.3.2-py3-none-any.whl", hash = "sha256:152835e4e4b317a625b1ad42cb148eb5b821ece21b9a92600002f6a49496d11a"},
-    {file = "bdd2dfa-0.3.2.tar.gz", hash = "sha256:dd8d873560a3148d2fe6299c818c85e2140d39a46e0ac261625608734dd0ff55"},
+    {file = "bdd2dfa-0.4.0-py3-none-any.whl", hash = "sha256:c8affa85f9839aacf315b9e32db25199991d630900956daa075a61329e4f556d"},
+    {file = "bdd2dfa-0.4.0.tar.gz", hash = "sha256:d6c02c37264b7bdf49109c690ba4750019cd49d1089987187279868554cbdf25"},
 ]
 bidict = [
     {file = "bidict-0.18.3-py2.py3-none-any.whl", hash = "sha256:621db384daef94b7031897ca479f4feed025989a64e91c6fae88fb88a842488c"},
@@ -906,8 +906,8 @@ blessings = [
     {file = "blessings-1.7.tar.gz", hash = "sha256:98e5854d805f50a5b58ac2333411b0482516a8210f23f43308baeb58d77c157d"},
 ]
 certifi = [
-    {file = "certifi-2019.11.28-py2.py3-none-any.whl", hash = "sha256:017c25db2a153ce562900032d5bc68e9f191e44e9a0f762f373977de9df1fbb3"},
-    {file = "certifi-2019.11.28.tar.gz", hash = "sha256:25b64c7da4cd7479594d035c08c2d809eb4aab3a26e5a990ea98cc450c320f1f"},
+    {file = "certifi-2020.4.5.1-py2.py3-none-any.whl", hash = "sha256:1d987a998c75633c40847cc966fcf5904906c920a7f17ef374f5aa4282abd304"},
+    {file = "certifi-2020.4.5.1.tar.gz", hash = "sha256:51fcb31174be6e6664c5f69e3e1691a2d72a1a12e90f872cbdb1567eb47b6519"},
 ]
 chardet = [
     {file = "chardet-3.0.4-py2.py3-none-any.whl", hash = "sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"},
@@ -1164,8 +1164,8 @@ pygraphviz = [
     {file = "pygraphviz-1.5.zip", hash = "sha256:50a829a305dc5a0fd1f9590748b19fece756093b581ac91e00c2c27c651d319d"},
 ]
 pyparsing = [
-    {file = "pyparsing-2.4.6-py2.py3-none-any.whl", hash = "sha256:c342dccb5250c08d45fd6f8b4a559613ca603b57498511740e65cd11a2e7dcec"},
-    {file = "pyparsing-2.4.6.tar.gz", hash = "sha256:4c830582a84fb022400b85429791bc551f1f4871c33f23e44f353119e92f969f"},
+    {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
+    {file = "pyparsing-2.4.7.tar.gz", hash = "sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1"},
 ]
 pyrsistent = [
     {file = "pyrsistent-0.15.7.tar.gz", hash = "sha256:cdc7b5e3ed77bed61270a47d35434a30617b9becdf2478af76ad2c6ade307280"},

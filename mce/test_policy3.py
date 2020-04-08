@@ -21,15 +21,12 @@ def test_policy():
     ctrls = [policy(cspec)(3), policy(cspec, 3)]
     for i, ctrl in enumerate(ctrls):
         assert 0 <= ctrl.psat <= 1
-        graph = ctrl.graph
-        assert len(graph.nodes) == 10
-        assert len(graph.edges) == 16
-
-        for node in graph.nodes:
-            assert graph.out_degree[node] <= 2
-
-            prob = sum(graph[x][y]['prob'] for x, y in graph.out_edges(node))
-            assert pytest.approx(prob, 1)
+        assert len(ctrl.ref2action_dist) == 5
+        assert all(len(v) == 2 for v in ctrl.ref2action_dist.values())
+        assert all(
+            sum(v.values()) == pytest.approx(1) 
+            for v in ctrl.ref2action_dist.values()
+        )
 
     pctrl = policy(cspec)
     # Agent gets monotonically more optimal

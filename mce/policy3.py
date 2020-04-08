@@ -1,7 +1,8 @@
 __all__ = ["Policy", "policy", "fit"]
 
+import random
 from functools import partial
-from typing import Tuple, List, Optional, Hashable
+from typing import Tuple, List, Optional, Hashable, Mapping
 
 import attr
 import funcy as fn
@@ -18,10 +19,9 @@ from mce.nx import spec2graph
 
 @attr.s(frozen=True, auto_attribs=True)
 class BitPolicy:
-    graph: nx.DiGraph
-    root: Hashable
-    real_sinks: Tuple[Hashable] = attr.ib(converter=tuple)
     spec: ConcreteSpec
+    ref2action_dist: Mapping[int, Mapping[bool, float]]
+    lsat: float
 
     @property
     def psat(self) -> float:
@@ -29,42 +29,38 @@ class BitPolicy:
         Probability of satisfying the underlying concrete
         specification using this policy.
         """
-        # TODO: consider implementing using log stochastic matrix.
-        # https://stackoverflow.com/questions/36467022/
-        # handling-matrix-multiplication-in-log-space-in-python
-
-        return np.exp(self.graph.nodes[self.root]['lsat'])
-
-    def __getitem__(self, node_pair):
-        node, node2 = node_pair
-        assert node2 in self.graph[node], "node2 must be a child of node."
-        return self.graph[node][node2]
+        return np.exp(self.lsat)
         
-    def prob(self, node, node2, log=False) -> float:
+    def prob(self, node, action, log=False) -> float:
         """Probability of transition from node to node2."""
-        prob = self[node, node2]['prob']
+        prob = self.ref2action_dist[node][action]
         return np.log(prob) if log else prob
 
-    def action(self, node, node2) -> Optional[bool]:
-        """Action required to transition node to node2."""
-        return self[node, node2]['action']
+    def markov_chain(self):
+        def dprob(ref_debt, action):
+            ref, debt = ref_debt
+            return 1 if debt > 0 else self.prob(ref, action)
+
+        return spec2graph(self.spec, qdd=True, dprob=dprob)
 
     def simulate(self, seed: int = None):
         """Generates tuples of (state, action, next_state) and the
         probability transitioning from state to next_state.
         """
         np.random.seed(seed)
+        graph, node, _ = self.markov_chain()
 
-        node = self.root
-        while self.graph.out_degree(node) > 0:
-            kids = list(self.graph.neighbors(node))
-            assert len(kids) == self.graph.out_degree(node)
+        while graph.out_degree(node) > 0:
+            kids = list(graph.neighbors(node))
+            assert len(kids) == graph.out_degree(node)
 
-            probs = [self.prob(node, k) for k in kids]
-            kid = np.random.choice(kids, p=probs)
+            probs = [graph.edges[node, k]['prob'] for k in kids]
+            kid, *_ = random.choices(kids, weights=probs)
 
             # Pr(s' | s, a)
-            yield (node, self.action(node, kid), kid), self.prob(node, kid)
+            action = graph.edges[node, kid]['action']
+            prob = graph.edges[node, kid]['prob']
+            yield (node, action, kid), prob
             node = kid
 
     def stochastic_matrix(self):
@@ -82,21 +78,22 @@ class BitPolicy:
         Note that true and false have self loops added to make the
         matrix stochastic.
         """
-        assert len(self.real_sinks) > 0
+        graph, root, real_sinks = self.markov_chain()
+        assert len(real_sinks) > 0
 
-        if len(self.real_sinks) == 1:
+        if len(real_sinks) == 1:
             mat = sp.sparse.csr_matrix((1, 1))
             mat[0, 0] = 1
-            return mat, bidict(enumerate(self.real_sinks))
+            return mat, bidict(enumerate(real_sinks))
 
-        var = lambda x: self.graph.nodes(data=True)[x]['var']
-        false, true = sorted(self.real_sinks, key=var)
+        var = lambda x: graph.nodes(data=True)[x]['var']
+        false, true = sorted(real_sinks, key=var)
 
         # Get nodes in correct order.
-        nodes = ["DUMMY", false, true, self.root]
-        nodes += list(set(self.graph.nodes) - set(nodes))
+        nodes = ["DUMMY", false, true, root]
+        nodes += list(set(graph.nodes) - set(nodes))
 
-        mat = nx.adjacency_matrix(self.graph, nodes, weight="prob")
+        mat = nx.adjacency_matrix(graph, nodes, weight="prob")
         mat = mat[1:, 1:]
 
         # Make sink node self loop in stochastic matrix.
@@ -150,9 +147,23 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
 
             graph.nodes[node]['lsat'] = logsumexp(lsats, b=probs)
         
+        def decision_nodes():
+            return (n for n in graph.nodes if graph.nodes[n]['decision'])
+
+        def action_dist(node):
+            assert graph.nodes[node]['decision']
+            out_edges = (graph.edges[e] for e in graph.in_edges(node))
+
+            return {
+                data['action']: data['prob'] for data in out_edges
+            }
+
+        ref2adist = {n: action_dist(n)  for n in decision_nodes()}
+        
         return BitPolicy(
-            graph=graph.reverse(copy=False), root=root, 
-            real_sinks=real_sinks, spec=spec
+            spec=spec, 
+            lsat=graph.nodes[root]['lsat'],
+            ref2action_dist=ref2adist
         )
 
     if coeff is None:

@@ -32,7 +32,6 @@ def test_bdd_trace():
     annotate_surprise(ctrl, [actions]*3)
     adj2 = nx.adjacency_matrix(ctrl.graph, weight="rel_entr")
 
-
     draw(ctrl.graph, 'foo2.dot')
 
 
