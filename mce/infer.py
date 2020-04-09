@@ -29,7 +29,6 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
         print("concretizing spec")
         cspec = concretize(spec, mdp, horizon)
         print("done spec")
-        print(f"done fitting")
         times["build spec"] = time.time() - start_time
 
         if psat is None:
@@ -47,6 +46,7 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
         start_time = time.time()
         print(f"compute log likelihood of demos")
         lprob = log_likelihoods(ctrl, encoded_trcs)
+
         times["surprise"] = time.time() - start_time
 
         print("\n----------------------------\n")

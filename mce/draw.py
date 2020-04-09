@@ -10,8 +10,8 @@ def label_edge(graph, edge):
         label += f'p={data["prob"]:.2f}\n'
     if data.get('action') is not None:
         label += f'a={data["action"]}\n'
-    if data.get('rel_entr') is not None:
-        label += f's={data["rel_entr"]:.2f}\n'
+    if data.get('visitation') is not None:
+        label += f'f={data["visitation"]}\n'
 
     data['label'] = label
 

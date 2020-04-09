@@ -41,17 +41,19 @@ class BitPolicy:
         
     def prob(self, node, action, log=False, qdd=False) -> float:
         """Probability of agent applying action given bdd node."""
-        if qdd:
-            node, debt = node
+        if action is None:
+            prob = 1
         else:
-            debt = 0
+            if qdd:
+                node, debt = node
+            else:
+                debt = 0
 
-        if debt > 0:
-            prob =  0.5
-        else:
-            uniform = {True: 0.5, False: 0.5}
-            prob = self.ref2action_dist.get(node, uniform)[action]
-        
+            if debt > 0:
+                prob =  0.5
+            else:
+                uniform = {True: 0.5, False: 0.5}
+                prob = self.ref2action_dist.get(node, uniform)[action]
         return np.log(prob) if log else prob
 
     def markov_chain(self):

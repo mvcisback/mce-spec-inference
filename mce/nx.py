@@ -19,8 +19,9 @@ def spec2graph(spec: ConcreteSpec, qdd=False, dprob=None) -> nx.DiGraph:
 
     def is_decision(state) -> bool:
         lvl = state.node.level
-        active = (state.debt == 0) if qdd else True
-        return spec.order.is_decision(lvl) and active
+        if qdd:
+            lvl -= state.debt
+        return spec.order.is_decision(lvl)
 
     def key(state):
         return (state.ref, state.debt) if qdd else state.ref

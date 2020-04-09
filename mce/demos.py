@@ -1,6 +1,6 @@
-__all__ = ['surprise_graph', 'encode_trcs', 'log_likelihoods']
+__all__ = ['visitation_graph', 'encode_trcs', 'log_likelihoods']
 
-from collections import defaultdict
+from collections import Counter
 from typing import Tuple, List, Sequence, Mapping
 
 import funcy as fn
@@ -10,6 +10,7 @@ from bdd2dfa.b2d import BNode
 from scipy.special import logsumexp
 
 from mce.policy3 import BitPolicy
+from mce.spec import ConcreteSpec
 
 
 Demo = List[Mapping[str, bool]]
@@ -43,22 +44,21 @@ def log_likelihoods(ctrl: BitPolicy, demos: Demos) -> float:
     return sum(ctrl.prob(n, a, log=True, qdd=True) for n, a in io_seq)
 
 
-def node2observed_bias(ctrl: BitPolicy, demos: Demos):
-    dfa = ctrl.spec._as_dfa(qdd=True)
+def node2action_hist(spec: ConcreteSpec, demos: Demos):
+    dfa = spec._as_dfa(qdd=True)
 
     def trace(actions):
-        bits = ctrl.spec.flatten(actions)
+        bits = spec.flatten(actions)
         trc = ((s.ref, s.debt) for s in dfa.trace(bits))
         return zip(trc, bits)
 
     traces = fn.mapcat(trace, demos)
     node2actions = fn.group_values(traces)
+    return fn.walk_values(Counter, node2actions)
 
-    return fn.walk_values(np.mean, node2actions)
 
-
-def surprise_graph(ctrl: BitPolicy, demos: Demos):
-    observed_bias = node2observed_bias(ctrl, demos)
+def visitation_graph(ctrl: BitPolicy, demos: Demos):
+    observed_bias = node2action_hist(ctrl.spec, demos)
 
     graph, root, real_sinks = ctrl.markov_chain()
     for node in nx.topological_sort(graph):
@@ -66,18 +66,19 @@ def surprise_graph(ctrl: BitPolicy, demos: Demos):
             action = graph.edges[node, node2]['action']
 
             if (node not in observed_bias):
-                surprise = 0
+                visitation = 0
             else:
-                observed = observed_bias[node]
-                if action is False:           # Could be {True, False, None}.
-                    observed = 1 - observed   # Bias is prob of action = True.
-
-                if observed == 0:
-                    surprise = 0
+                if action is not None:
+                    visitation = observed_bias[node][action]
                 else:
-                    expected = ctrl.prob(node, action, qdd=True)
-                    surprise = observed * (np.log(observed) - np.log(expected))
+                    visitation = observed_bias[node][False]
+                    visitation += observed_bias[node][True]
 
-            graph.edges[node, node2]['rel_entr'] = surprise
+            graph.edges[node, node2]['visitation'] = visitation / len(demos)
+
+    for sink in real_sinks:
+        incoming = graph.in_edges(sink)
+        visitation = sum(graph.edges[e]['visitation'] for e in incoming)
+        graph.edges[sink, "DUMMY"]['visitation'] = visitation
 
     return graph, root, real_sinks
