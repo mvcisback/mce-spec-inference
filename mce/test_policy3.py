@@ -85,4 +85,4 @@ def test_sample_smoke():
     ctrl = policy(cspec, 3)
     actions = ctrl.simulate()
     assert len(actions) == 3
-
+    assert isinstance(cspec.accepts(actions), bool)
