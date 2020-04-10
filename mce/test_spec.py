@@ -31,7 +31,10 @@ def test_flatten():
     cspec = concretize(spec, sys, 3)
 
     actions = [act(True, True), act(True, False), act(True, True)]
-    assert cspec.flatten(actions) == [True, True, True, False, True, True]
+    bits = cspec.flatten(actions)
+    assert bits == [True, True, True, False, True, True]
+    
+    assert cspec.unflatten(bits) == actions
 
 
 def test_abstract_trace():

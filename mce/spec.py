@@ -1,6 +1,6 @@
 __all__ = ["ConcreteSpec", "concretize"]
 
-from typing import FrozenSet, Sequence
+from typing import FrozenSet, Sequence, Mapping, Tuple
 
 import attr
 import aiger_bdd
@@ -14,7 +14,12 @@ from dfa import DFA
 
 from mce.preimage import preimage
 from mce.order import BitOrder
-from mce.bdd import to_bdd
+from mce.bdd import to_bdd, TIMED_INPUT_MATCHER
+
+
+Action = Mapping[str, Sequence[bool]]
+Actions = Sequence[Action]
+Bits = Sequence[bool]
 
 
 def xor(x, y):
@@ -51,7 +56,7 @@ class ConcreteSpec:
     def manager(self):
         return self.bexpr.bdd
 
-    def flatten(self, actions) -> Sequence[bool]:
+    def flatten(self, actions: Actions) -> Bits:
         """
         Converts structured sequence of (sys, env) actions to a
         sequence of bits that this concrete specification recognizes.
@@ -68,14 +73,34 @@ class ConcreteSpec:
 
         idx2key = bidict(self.bexpr.bdd.vars).inv
         return [timed_actions[idx2key[i]] for i in range(len(idx2key))]
+
+    def unflatten(self, bits: Bits) -> Actions:
+        """
+        Take a sequence of bits and group into bitvector inputs for
+        dynamics circuit.
+        """
+        assert (len(bits) % self.order.total_bits) == 0
+        return list(self._unflatten(bits))
+
+    def _unflatten(self, bits: Bits):
+        size = self.order.total_bits
+        for i, chunk in enumerate(fn.chunks(self.order.total_bits, bits)):
+            mapping = {}
+            for j, bit in enumerate(chunk):
+                lvl = i*size + j
+                var = self.bexpr.bdd.var_at_level(lvl)
+                name, _, idx = TIMED_INPUT_MATCHER.match(var).groups()
+                mapping[f'{name}[{idx}]'] = bit
+
+            yield self.dyn.imap.unblast(mapping)
         
-    def accepts(self, actions) -> bool:
+    def accepts(self, actions: Actions) -> bool:
         """Does this spec accept the given sequence of (sys, env) actions."""
         flattened = self.flatten(actions)
         assert len(flattened) == self.order.horizon * self.order.total_bits
         return self._as_dfa(qdd=True).label(flattened)
 
-    def toggle(self, actions):
+    def toggle(self, actions: Actions):
         """Toggles a sequence of (sys, env) actions."""
         assert len(actions) == self.horizon
         aps = fn.lpluck(0, self.dyn.simulate(actions))
@@ -98,7 +123,7 @@ class ConcreteSpec:
         """
         return to_dfa(self.bexpr, qdd=qdd)
 
-    def abstract_trace(self, actions) -> Sequence[BNode]:
+    def abstract_trace(self, actions: Actions) -> Sequence[BNode]:
         """Path a set of (sys, env) actions takes through BDD."""
         return self._as_dfa().trace(self.flatten(actions))
 

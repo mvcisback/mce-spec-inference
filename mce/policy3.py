@@ -63,12 +63,9 @@ class BitPolicy:
 
         return spec2graph(self.spec, qdd=True, dprob=dprob)
 
-    def simulate(self, seed: int = None):
-        """Generates tuples of (state, action, next_state) and the
-        probability transitioning from state to next_state.
-        """
+    def _simulate(self, seed: int = None):
         np.random.seed(seed)
-        graph, node, _ = self.markov_chain()
+        graph, node, real_sinks = self.markov_chain()
 
         while graph.out_degree(node) > 0:
             kids = list(graph.neighbors(node))
@@ -80,8 +77,17 @@ class BitPolicy:
             # Pr(s' | s, a)
             action = graph.edges[node, kid]['action']
             prob = graph.edges[node, kid]['prob']
-            yield (node, action, kid), prob
+            if node not in real_sinks:
+                yield action
             node = kid
+
+    def simulate(self, seed: int = None):
+        """
+        Generates tuples of (state, action, next_state) and the
+        probability transitioning from state to next_state.
+        """
+        chunks = fn.lchunks(self.spec.order.total_bits, self._simulate(seed))
+        return [self.spec.unflatten(c)[0] for c in chunks]
 
     def stochastic_matrix(self):
         """

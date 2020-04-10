@@ -83,5 +83,6 @@ def test_sample_smoke():
     spec, sys = scenario_reactive()
     cspec = concretize(spec, sys, 3)
     ctrl = policy(cspec, 3)
-    list(ctrl.simulate())
+    actions = ctrl.simulate()
+    assert len(actions) == 3
 
