@@ -12,6 +12,10 @@ TIMED_INPUT_MATCHER = re.compile(r'(.*)##time_(\d+)\[(\d+)\]')
 
 
 def to_bdd(mdp, horizon, output=None, manager=None):
+    """Compute BDD for horizon-unrolling of mdp.
+
+    If output is not specified, mdp must have only one output.
+    """
     circ = mdp.aigbv
 
     if '##valid' in circ.outputs:  # TODO: handle ##valid.
