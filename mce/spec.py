@@ -125,7 +125,7 @@ class ConcreteSpec:
 
     def abstract_trace(self, actions: Actions) -> Sequence[BNode]:
         """Path a set of (sys, env) actions takes through BDD."""
-        return self._as_dfa().trace(self.flatten(actions))
+        return self._as_dfa(qdd=True).trace(self.flatten(actions))
 
 
 def concretize(

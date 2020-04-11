@@ -6,9 +6,11 @@ import funcy as fn
 import networkx as nx
 import numpy as np
 import scipy as sp
+from hypothesis import given, settings
 from networkx.drawing.nx_pydot import write_dot
 
-from mce.test_scenarios import scenario_reactive
+from mce.test_scenarios import scenario1, scenario_reactive
+from mce.test_scenarios import DET_SCENARIOS, SCENARIOS
 from mce.spec import concretize
 from mce.policy3 import policy, fit
 
@@ -86,3 +88,25 @@ def test_sample_smoke():
     actions = ctrl.simulate()
     assert len(actions) == 3
     assert isinstance(cspec.accepts(actions), bool)
+
+
+def test_long_horizon():
+    # TODO: test that more scenarios work with long horizons.
+    for scenario in [scenario1, scenario_reactive]:
+        spec, mdp = scenario()
+        cspec = concretize(spec, mdp, 20)
+        ctrl = fit(cspec, 0.96)
+
+        assert ctrl.psat == pytest.approx(0.96)
+
+
+@given(SCENARIOS)
+def test_psat_monotonicity(scenario):
+    spec, mdp = scenario()
+    cspec = concretize(spec, mdp, 3)
+
+    prob = 0
+    for i in range(10):
+        ctrl = policy(cspec, i)
+        prev, prob = prob, ctrl.psat
+        assert prev <= prob

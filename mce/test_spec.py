@@ -48,4 +48,4 @@ def test_abstract_trace():
             assert prev.node.level == 6
             assert prev.node == cspec.manager.false
         else:
-            assert curr.node.level < prev.node.level
+            assert (curr.node.level, -curr.debt) < (prev.node.level, -prev.debt)
