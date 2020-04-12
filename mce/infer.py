@@ -1,18 +1,18 @@
 import time
 from multiprocess import Pool
 
-import aiger_ptltl as LTL
 import funcy as fn
-import networkx as nx
 
-#from mce.policy2 import policy
-from mce.policy3 import fit
+from mce.policy3 import fit, policy
 from mce.spec import concretize
-from mce.utils import empirical_sat_prob
 from mce.demos import encode_trcs, log_likelihoods
 
 
 def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
+    """
+    Searches for the most likely specification in specs given
+    demonstations, demos, from an agent operating in mdp.
+    """
     horizon = len(demos[0][0])
     specs = list(specs)
 

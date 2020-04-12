@@ -2,7 +2,6 @@ import funcy as fn
 
 from mce import infer
 from mce.test_scenarios import sys1, sys3, SPEC1, SPEC2, SPEC3
-from mce.utils import empirical_sat_prob
 
 
 def create_demos(n):
@@ -26,14 +25,6 @@ SPECS = [
     SPEC2,   # True
     ~SPEC2   # False
 ]
-
-
-def test_monotonic_empirical_sat_prob():
-    psat = 0
-    for i in range(5):
-        demos = create_demos(i)
-        prev, psat = psat, empirical_sat_prob(SPEC1, demos)
-        assert prev <= psat
 
 
 def test_infer_log_likelihood1():

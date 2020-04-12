@@ -1,4 +1,4 @@
-__all__ = ["Policy", "policy", "fit"]
+__all__ = ["BitPolicy", "policy", "fit"]
 
 import random
 from functools import partial

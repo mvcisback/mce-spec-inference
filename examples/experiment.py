@@ -51,7 +51,7 @@ DYN = GW.gridworld(8, start=(3, 5), compressed_inputs=True)
 
 SLIP = BV.atom(1, 'c', signed=False).repeat(2) & BV.atom(2, 'a', signed=False)
 SLIP = SLIP.with_output('a').aigbv
-DYN2 = C.coin((1, 16), 'c') >> C.circ2mdp(DYN << SLIP)
+DYN2 = C.coin((31, 32), 'c') >> C.circ2mdp(DYN << SLIP)
 
 
 def encode_state(x, y):
@@ -144,7 +144,7 @@ STATES5 = (
 TRC5 = (ACTIONS5, STATES5)
 
 
-TRACES = [TRC0, TRC1, TRC2, TRC3, TRC4]*30 + [TRC5]
+TRACES = [TRC0, TRC1, TRC2, TRC3, TRC4] + [TRC5]
 
 
 def encode_trace(trc):
@@ -230,23 +230,26 @@ def eval_monitors(trc):
 
 def infer():
     trcs = [encode_trace(trc) for trc in TRACES]
-    #mdp = C.circ2mdp(DYN)
     mdp = DYN2
     best, spec2score = spec_mle(
-        mdp, trcs, SPEC2MONITORS.values(), parallel=True
+        mdp, trcs, SPEC2MONITORS.values(), parallel=True, psat=0.95
     )
-    best_score = spec2score[best]
+    
+    def normalize(score):
+        return score - spec2score[SPEC2MONITORS[CONST_TRUE]]
+
+    best_score = normalize(spec2score[best])
 
     fig = tpl.figure()
     fig.barh(
-        fn.lmap(abs, spec2score.values()),
+        fn.lmap(normalize, spec2score.values()),
         labels=SPEC_NAMES,
         force_ascii=False,
         show_vals=False,
     )
 
     print('\n' + "="*80)
-    print('-log likelihood'.rjust(40) + '\n')
+    print('log likelihood(spec) - log_likelihood(True)'.rjust(40) + '\n')
     print('(higher is better)'.rjust(41))
     print("="*80)
     fig.show()
@@ -265,8 +268,6 @@ def main():
         print()
         print(f'trace {i}')
         print_trc(trc)
-        #validate_trace(trc)
-        #eval_monitors(trc)
 
     infer()
 

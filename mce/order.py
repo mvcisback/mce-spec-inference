@@ -1,7 +1,8 @@
+__all__ = ['BitOrder']
+
 from typing import Tuple
 
 import attr
-import numpy as np
 
 
 @attr.s(frozen=True, auto_attribs=True)
@@ -75,41 +76,3 @@ class BitOrder:
     def _used_decisions(self, lvl):
         """Remaining Round Decisions"""
         return min(self.decision_bits, self.round_index(lvl) + 1)
-
-    def on_boundary(self, ctx):
-        if self.first_real_decision(ctx):
-            return True
-        return self.boundary_edge(ctx.curr_lvl, ctx.prev_lvl)
-
-    def on_boundary2(self, ctx, edge):
-        lvl = self.edge2lvl(ctx, edge)
-        return self.boundary_edge(ctx.curr_lvl, lvl)
-
-    def boundary_edge(self, lvl1, lvl2):
-        return self.interval(lvl1) != self.interval(lvl2)
-
-    def first_real_decision(self, ctx):
-        return ctx.prev_lvl is None
-
-    def prev_was_decision(self, ctx):
-        if self.first_real_decision(ctx):
-            return self.decisions_on_edge(ctx) > 0
-        return self.is_decision(ctx.prev_lvl)
-
-    def decisions_on_edge(self, ctx):
-        prev_lvl = -1 if self.first_real_decision(ctx) else ctx.prev_lvl
-        return self.skipped_decisions(prev_lvl, ctx.curr_lvl)
-
-    def decisions_on_edge2(self, ctx, edge):
-        lvl = self.edge2lvl(ctx, edge)
-        return self.skipped_decisions(ctx.curr_lvl, lvl)
-
-    def decision_entropy(self, ctx):
-        return np.log(2)*self.decisions_on_edge(ctx)
-
-    def decision_entropy2(self, ctx, edge):
-        return np.log(2)*self.decisions_on_edge2(ctx, edge)
-
-    def edge2lvl(self, ctx, edge):
-        lvl = ctx.high_lvl if edge else ctx.low_lvl
-        return ctx.max_lvl + 1 if lvl is None else lvl
