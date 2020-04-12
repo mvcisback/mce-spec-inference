@@ -144,7 +144,8 @@ STATES5 = (
 TRC5 = (ACTIONS5, STATES5)
 
 
-TRACES = [TRC0, TRC1, TRC2, TRC3, TRC4] + [TRC5]
+TRACES = [TRC0, TRC1, TRC2, TRC3, TRC4] \
+    + [TRC5] + [TRC4]*2
 
 
 def encode_trace(trc):
@@ -232,11 +233,11 @@ def infer():
     trcs = [encode_trace(trc) for trc in TRACES]
     mdp = DYN2
     best, spec2score = spec_mle(
-        mdp, trcs, SPEC2MONITORS.values(), parallel=True, psat=0.95
+        mdp, trcs, SPEC2MONITORS.values(), parallel=True
     )
-    
+
     def normalize(score):
-        return score - spec2score[SPEC2MONITORS[CONST_TRUE]]
+        return int(score / spec2score[SPEC2MONITORS[CONST_TRUE]] * 100)
 
     best_score = normalize(spec2score[best])
 
@@ -245,11 +246,11 @@ def infer():
         fn.lmap(normalize, spec2score.values()),
         labels=SPEC_NAMES,
         force_ascii=False,
-        show_vals=False,
+        show_vals=True,
     )
 
     print('\n' + "="*80)
-    print('log likelihood(spec) - log_likelihood(True)'.rjust(40) + '\n')
+    print('        100 * (log likelihood(spec) / log_likelihood(True))'.rjust(40) + '\n')
     print('(higher is better)'.rjust(41))
     print("="*80)
     fig.show()
