@@ -523,7 +523,7 @@ description = "Aiger to BDD bridge."
 name = "py-aiger-bdd"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.3.0"
+version = "0.3.1"
 
 [package.dependencies]
 attrs = ">=19.3,<20.0"
@@ -872,23 +872,6 @@ version = "0.2.4"
 
 [[package]]
 category = "main"
-description = "Optimizing compiler for evaluating mathematical expressions on CPUs and GPUs."
-name = "theano"
-optional = false
-python-versions = "*"
-version = "1.0.4"
-
-[package.dependencies]
-numpy = ">=1.9.1"
-scipy = ">=0.14"
-six = ">=1.9.0"
-
-[package.extras]
-doc = ["Sphinx (>=0.5.1)", "pygments"]
-test = ["nose (>=1.3.0)", "parameterized", "flake8"]
-
-[[package]]
-category = "main"
 description = "Implements a topological sort algorithm."
 name = "toposort"
 optional = false
@@ -930,7 +913,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "d9fec83617290914b91ce42296ea5b6a1660d980e0b421552365dc177d5d69fd"
+content-hash = "922a56ba03449f0c50f147233e41a070c90b19be2e26b7299f19a7c4598fec1e"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1199,8 +1182,8 @@ py-aiger = [
     {file = "py_aiger-4.0.2-py3-none-any.whl", hash = "sha256:67dce653b77c276608488363890c154dce82c36b143bc50b92164c0e81751758"},
 ]
 py-aiger-bdd = [
-    {file = "py-aiger-bdd-0.3.0.tar.gz", hash = "sha256:a4ebb6a109c52cd13725da36fb414c1e8743595c4e33e1ef4b210e92526c95e4"},
-    {file = "py_aiger_bdd-0.3.0-py3-none-any.whl", hash = "sha256:0ce6ceee8873db8a417b415369744bac3a0986dab6def62c4471165a76fe83b9"},
+    {file = "py-aiger-bdd-0.3.1.tar.gz", hash = "sha256:ab3dadfcb7679fbc6261080adcdb1e3ce3628bf6a975edcf393ee2de0c958590"},
+    {file = "py_aiger_bdd-0.3.1-py3-none-any.whl", hash = "sha256:ff4d90c503096a00d15a002bb529918fc6d12a52c7ed2189854df057b87fd32c"},
 ]
 py-aiger-bv = [
     {file = "py-aiger-bv-2.0.0.tar.gz", hash = "sha256:fd2c99a1ec34f19cf776adae9fc43c808f4b01b9a8e4c864abaca5cd14b39f4a"},
@@ -1336,9 +1319,6 @@ sortedcontainers = [
 termplotlib = [
     {file = "termplotlib-0.2.4-py3-none-any.whl", hash = "sha256:8caf1b9984491c74e3429d057519c7ac91bb4bfa4517a03c04ac7692d2c90aa2"},
     {file = "termplotlib-0.2.4.tar.gz", hash = "sha256:e9244aca8f8d13118aea43565a56d5c8c82f6df6d2c254b473688e1410416c5f"},
-]
-theano = [
-    {file = "Theano-1.0.4.tar.gz", hash = "sha256:35c9bbef56b61ffa299265a42a4e8f8cb5a07b2997dabaef0f8830b397086913"},
 ]
 toposort = [
     {file = "toposort-1.5-py2.py3-none-any.whl", hash = "sha256:d80128b83b411d503b0cdb4a8f172998bc1d3b434b6402a349b8ebd734d51a80"},
