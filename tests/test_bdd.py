@@ -3,7 +3,7 @@ import aiger_coins as C
 import aiger_ptltl as PLTL
 import funcy as fn
 
-from mce.bdd import to_bdd, TIMED_INPUT_MATCHER, to_bdd2
+from mce.bdd import TIMED_INPUT_MATCHER, to_bdd2
 from mce.test_scenarios import scenario_reactive
 
 
@@ -14,13 +14,13 @@ def test_smoke():
     spec <<= C.coin((1, 8), name='c')
     spec >>= C.circ2mdp(BV.sink(1, ['c']))  # HACK
 
-    bdd, manager, input2var, order = to_bdd(spec, horizon=3)
+    bdd, manager, order = to_bdd2(spec, horizon=3)
 
     assert bdd.dag_size == 4
 
     for i in range(order.total_bits*order.horizon):
         t = order.time_step(i)
-        var = input2var.inv[manager.var_at_level(i)]
+        var = manager.var_at_level(i)
         action, t2, _ = TIMED_INPUT_MATCHER.match(var).groups()
         assert t == int(t2)
         decision = action in spec.inputs
@@ -34,12 +34,12 @@ def test_smoke2():
     mdp >>= C.circ2mdp(spec_circ)
     output = spec.output
 
-    bdd, manager, input2var, order = to_bdd(mdp, horizon=3, output=output)
+    bdd, manager, order = to_bdd2(mdp, horizon=3, output=output)
 
     assert bdd.dag_size == 7
 
     def translate(mapping):
-        return fn.walk_keys(input2var.get, mapping)
+        return mapping
 
     assert bdd.count(6) == 8
 
@@ -104,32 +104,3 @@ def test_smoke2():
     assert bdd.bdd.let(translate({
         'c##time_2[0]': True,
     }), bdd) == bdd
-
-
-def test_smoke2():
-    spec = PLTL.atom('a').historically()
-    spec = BV.aig2aigbv(spec.aig)
-    spec = C.circ2mdp(spec)
-    spec <<= C.coin((1, 8), name='c')
-    spec >>= C.circ2mdp(BV.sink(1, ['c']))  # HACK
-
-    pred1, manager, _, order = to_bdd(spec, horizon=3)
-    levels = manager.vars
-    pred2, _, order2 = to_bdd2(spec, horizon=3, manager=manager)
-    levels2 = manager.vars
-    
-    assert levels == levels2
-    assert order == order2
-    assert pred1.dag_size == pred2.dag_size
-    assert pred1.equiv(pred2) == manager.true
-
-    spec, mdp = scenario_reactive()
-
-    spec_circ = BV.aig2aigbv(spec.aig)
-    mdp >>= C.circ2mdp(spec_circ)
-    output = spec.output
-
-    pred1, manager, _, order = to_bdd(mdp, horizon=3, output=output)
-    pred2, _, order = to_bdd2(mdp, horizon=3, output=output, manager=manager)
-    
-    assert pred1.equiv(pred2) == manager.true

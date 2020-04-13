@@ -4,7 +4,7 @@ import funcy as fn
 
 from mce.test_scenarios import scenario_reactive
 from mce.preimage import preimage
-from mce.bdd import to_bdd
+from mce.bdd import to_bdd2
 
 
 def xor(x, y):
@@ -29,7 +29,7 @@ def test_preimage():
         'a##time_0', 'a##time_1', 'a##time_2',
     }
 
-    bexpr1, manager, _, order = to_bdd(sys2, horizon=3)
+    bexpr1, manager, order = to_bdd2(sys2, horizon=3)
 
     def accepts(bexpr, actions):
         """Check if bexpr accepts action sequence."""
