@@ -220,7 +220,7 @@ def fit(cspec: ConcreteSpec, psat: float, top: float=100) -> BitPolicy:
     elif f(top) < 0:
         coeff = top
     else:
-        coeff = brentq(f, -top, top)
+        coeff = brentq(f, -top, top, rtol=1e-3, xtol=5e-2)
 
     if coeff < 0:
         # More likely the negated spec than this one.

@@ -14,7 +14,7 @@ from dfa import DFA
 
 from mce.preimage import preimage
 from mce.order import BitOrder
-from mce.bdd import to_bdd, TIMED_INPUT_MATCHER
+from mce.bdd import to_bdd2, TIMED_INPUT_MATCHER
 
 
 Action = Mapping[str, Sequence[bool]]
@@ -149,5 +149,5 @@ def concretize(
         size = sys._aigbv.omap[sym].size
         monitor >>= C.MDP(BV.sink(size, [sym]))    
 
-    bexpr, manager, _, order = to_bdd(sys >> monitor, horizon)
+    bexpr, manager, order = to_bdd2(sys >> monitor, horizon)
     return ConcreteSpec(bexpr, order, sys_inputs=sys.inputs, dyn=sys.aigbv)
