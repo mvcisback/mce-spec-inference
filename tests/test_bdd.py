@@ -3,7 +3,7 @@ import aiger_coins as C
 import aiger_ptltl as PLTL
 import funcy as fn
 
-from mce.bdd import to_bdd, TIMED_INPUT_MATCHER
+from mce.bdd import to_bdd, TIMED_INPUT_MATCHER, to_bdd2
 from mce.test_scenarios import scenario_reactive
 
 
@@ -104,3 +104,32 @@ def test_smoke2():
     assert bdd.bdd.let(translate({
         'c##time_2[0]': True,
     }), bdd) == bdd
+
+
+def test_smoke2():
+    spec = PLTL.atom('a').historically()
+    spec = BV.aig2aigbv(spec.aig)
+    spec = C.circ2mdp(spec)
+    spec <<= C.coin((1, 8), name='c')
+    spec >>= C.circ2mdp(BV.sink(1, ['c']))  # HACK
+
+    pred1, manager, _, order = to_bdd(spec, horizon=3)
+    levels = manager.vars
+    pred2, _, order2 = to_bdd2(spec, horizon=3, manager=manager)
+    levels2 = manager.vars
+    
+    assert levels == levels2
+    assert order == order2
+    assert pred1.dag_size == pred2.dag_size
+    assert pred1.equiv(pred2) == manager.true
+
+    spec, mdp = scenario_reactive()
+
+    spec_circ = BV.aig2aigbv(spec.aig)
+    mdp >>= C.circ2mdp(spec_circ)
+    output = spec.output
+
+    pred1, manager, _, order = to_bdd(mdp, horizon=3, output=output)
+    pred2, _, order = to_bdd2(mdp, horizon=3, output=output, manager=manager)
+    
+    assert pred1.equiv(pred2) == manager.true
