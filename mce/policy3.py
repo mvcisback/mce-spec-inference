@@ -138,7 +138,7 @@ class BitPolicy:
         return mat, bidict(enumerate(nodes[1:]))
 
 
-def policy(spec: ConcreteSpec, coeff: Optional[float] = None):
+def policy(spec: ConcreteSpec, coeff: Optional[float] = None) -> BitPolicy:
     reference_graph, root, real_sinks = spec2graph(spec)
 
     @fn.cache(5)  # Cache results for 5 seconds.
@@ -220,7 +220,7 @@ def fit(cspec: ConcreteSpec, psat: float, top: float=100) -> BitPolicy:
     elif f(top) < 0:
         coeff = top
     else:
-        coeff = brentq(f, -top, top, rtol=1e-3, xtol=5e-2)
+        coeff = brentq(f, -top, top)
 
     if coeff < 0:
         # More likely the negated spec than this one.
