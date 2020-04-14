@@ -1,3 +1,5 @@
+__all__ = ['spec2graph']
+
 from typing import Optional
 
 import attr

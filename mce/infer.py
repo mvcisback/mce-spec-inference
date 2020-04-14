@@ -3,7 +3,7 @@ from multiprocess import Pool
 
 import funcy as fn
 
-from mce.policy3 import fit, policy
+from mce.policy3 import fit
 from mce.spec import concretize
 from mce.demos import encode_trcs, log_likelihoods
 

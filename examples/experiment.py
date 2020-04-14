@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from itertools import product
-
 import aiger as A
 import aiger_bv as BV
 import aiger_coins as C
@@ -11,7 +9,6 @@ import funcy as fn
 import termplotlib as tpl
 from bidict import bidict
 from blessings import Terminal
-from dd2nx.to_nx import to_nx
 
 
 from mce.infer import spec_mle
