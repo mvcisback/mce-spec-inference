@@ -23,9 +23,9 @@ py-aiger-bv = "^2.0.0"
 py-aiger-coins = {version = "^1.4.0", extras = ["sat", "bdd"]}
 py-aiger-sat = "^1.1.0"
 scipy = "^1.4.1"
+pygraphviz = {version = "^1.5", optional = true}
 
 [tool.poetry.dev-dependencies]
-blessings = "^1.7"
 codecov = "^2.0"
 hypothesis = "^4.42"
 ipython = "^7.13.0"
@@ -34,13 +34,11 @@ matplotlib = "^3.2.1"
 notebook = "^6.0.3"
 py-aiger-gridworld = "^0.2.0"
 py-aiger-ptltl = "^1.2.0"
-pygraphviz = "^1.5"
 pytest-cov = "^2.7"
 pytest-flake8 = "^1.0"
 pytest-xdist = "^1.29"
 pyyaml = "^5.3.1"
 seaborn = "^0.10.0"
-termplotlib = "^0.2.4"
 
 [build-system]
 requires = ["poetry>=0.12"]
