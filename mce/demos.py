@@ -12,6 +12,7 @@ from scipy.special import logsumexp
 
 from mce.policy3 import BitPolicy, BVPolicy
 from mce.spec import ConcreteSpec
+from mce.qbvnode import QBVNode
 
 
 Demo = List[Mapping[str, bool]]
@@ -32,20 +33,27 @@ class PrefixTree:
         if not relative:
             raise NotImplementedError
 
+        # TODO: consider letting spec produce qbvnodes.
+        order = ctrl.bitpolicy.spec.order
+        qnode = ctrl.bitpolicy.spec._as_dfa(qdd=True).start
+
+        qbv_root = QBVNode(qnode, order)
+        stack = [(self.root, qbv_root)]
         logp = 0
-        stack = [(self.root, ctrl.spec._as_dfa(qdd=True).start, True)]
         while stack:
-            tnode, qnode, is_decision = stack.pop()
+            tnode, qbv_node = stack.pop()
 
             for tnode2 in self.tree.neighbors(tnode):
                 action = self.tree.nodes[tnode2]['source']
                 visits = self.tree.nodes[tnode2]['visits']
 
-                if is_decision:
-                    lprob_action, qnode2 = ctrl.prob(
-                        qnode, action, log=True, with_qnode=True
-                    )
-                    logp += visits * lprob_action
+                if qbv_node.is_decision:
+                    logp += visits * ctrl.prob(qbv_node, action, log=True)
+
+                qbv_node2 = qbv_node.transition(action)
+                stack.append((tnode2, qbv_node2))
+
+        return logp
             
 
 

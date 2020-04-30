@@ -4,7 +4,7 @@ __all__ = ["BitPolicy", "policy", "fit", "BVPolicy"]
 
 import random
 from functools import partial, lru_cache
-from typing import Tuple, List, Optional, Hashable, Mapping
+from typing import Tuple, List, Optional, Hashable, Mapping, Union
 
 import attr
 import funcy as fn
@@ -214,7 +214,31 @@ def policy(spec: ConcreteSpec, coeff: Optional[float] = None) -> BitPolicy:
     return ppolicy(coeff)
 
 
-def fit(cspec: ConcreteSpec, psat: float, top: float=100) -> BitPolicy:
+@attr.s(frozen=True, auto_attribs=True)
+class BVPolicy:
+    bitpolicy: BitPolicy
+
+    @property
+    def psat(self) -> float:
+        return self.bitpolicy.psat
+
+    def prob(self, node, action, log=False) -> float:
+        if isinstance(node, QNode):
+            node = QBVNode(node, self.bitpolicy.spec.order)
+        assert isinstance(node, QBVNode)
+
+        logp = 0
+        _, trc = node.trace(action)
+        for qnode, bit in trc:
+            logp += self.bitpolicy.prob(qnode, bit, log=True, qdd=True)
+
+        return logp if log else np.exp(logp)
+
+
+Policy = Union[BitPolicy, BVPolicy]
+
+
+def fit(cspec: ConcreteSpec, psat: float, top: float=100, bv=False) -> Policy:
     """Fit a max causal ent policy with satisfaction probability psat."""
     assert 0 <= psat <= 1
     pctrl = policy(cspec)
@@ -233,27 +257,5 @@ def fit(cspec: ConcreteSpec, psat: float, top: float=100) -> BitPolicy:
         # More likely the negated spec than this one.
         coeff = 0  
 
-    return pctrl(coeff)
-
-
-@attr.s(frozen=True, auto_attribs=True)
-class BVPolicy:
-    bitpolicy: BitPolicy
-
-    @property
-    def psat(self) -> float:
-        return self.bitpolicy.psat
-
-    def prob(self, node, action, log=False) -> float:
-        logp = 0
-
-        if isinstance(node, QNode):
-            node = QBVNode(node, self.bitpolicy.spec.order)
-        assert isinstance(node, QBVNode)
-
-        _, trc = node.trace(action)
-        for qnode, bit in trc:
-            logp += self.bitpolicy.prob(qnode, bit, log=True, qdd=True)
-            qnode = qnode.transition(bit)
-
-        return logp if log else np.exp(logp)
+    ctrl = pctrl(coeff)
+    return BVPolicy(ctrl) if bv else ctrl

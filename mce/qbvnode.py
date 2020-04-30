@@ -19,11 +19,16 @@ from mce.bdd import TIMED_INPUT_MATCHER
 Trace = List[Tuple[QNode, bool]]
 
 
-@attr.s(frozen=True, auto_attribs=True)
+@attr.s(frozen=True)
 class QBVNode:
     """Bit Vector wrapper around QDD Node."""
-    qnode: QNode
-    order: BitOrder
+    qnode: QNode = attr.ib()
+    order: BitOrder = attr.ib()
+
+    @qnode.validator
+    def check_round_idx(self, *_):
+        round_idx = self.order.round_index(self.level) == 0
+        return round_idx in (0, self.order.decision_bits)
 
     def trace(self, action) -> Tuple[QBVNode, Trace]:
         """
@@ -33,31 +38,39 @@ class QBVNode:
              self.qnode to the final qnode. Doesn't include
              final qnode.
         """
-        trc = list(self._trace(pmap(action)))
-        return attr.evolve(self, qnode=trc[-1][0]), trc
+        *trc, (qnext, _) = list(self._trace(pmap(action)))
+
+        bv_next = attr.evolve(self, qnode=qnext)
+        return bv_next, trc
 
     @lru_cache
     def _trace(self, action):
-        qnode, order = self.qnode, self.order
+        return list(self.__trace(action))
 
-        round_idx = order.round_index(qnode.node.level)
-        assert round_idx in (0, order.decision_bits)
-        is_decision = round_idx == 0
-        size = order.decision_bits if is_decision else order.chance_bits
+    def __trace(self, action):
+        qnode, order = self.qnode, self.order
+        size = order.decision_bits if self.is_decision else order.chance_bits
 
         for i in range(size):
-            name, _, idx = TIMED_INPUT_MATCHER.match(qnode.node.var).groups()
+            var = qnode.node.bdd.var_at_level(qnode.node.level - qnode.debt)
+            name, _, idx = TIMED_INPUT_MATCHER.match(var).groups()
             bit = action[name][int(idx)]
             yield (qnode, bit)
             qnode = qnode.transition(bit)
 
-        round_idx = order.round_index(qnode.node.level) == 0
-        assert round_idx in (0, order.decision_bits)
-
+        yield (qnode, None)
 
     def transition(self, action) -> QBVNode:
         """QBVNode transitioned to by following bits in action."""
         return self.trace(action)[0]
+
+    @property
+    def is_decision(self):
+        return self.order.is_decision(self.level)
+
+    @property
+    def level(self):
+        return self.qnode.node.level - self.qnode.debt
 
 
 __all__ = ['QBVNode']

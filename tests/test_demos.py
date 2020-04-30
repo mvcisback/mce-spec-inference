@@ -97,4 +97,9 @@ def test_prefix_tree():
         data = tree.tree.nodes()[node]
         data['label'] = f'{data["source"]}\nvisits={data.get("visits", 0)}'
 
-    nx.drawing.nx_pydot.write_dot(tree.tree, 'foo.dot')
+    nx.drawing.nx_pydot.write_dot(tree.tree, 'prefix_tree.dot')
+
+    cspec = concretize(spec, sys, 3)
+    ctrl = fit(cspec, 0.7, bv=True)
+    lprob = tree.log_likelihood(ctrl, relative=True)
+    assert lprob < 0
