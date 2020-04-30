@@ -29,17 +29,57 @@ class PrefixTree:
     tree: nx.DiGraph
     root: str
 
+    def action(self, tnode: str):
+        """Returns the action that lead to this tree node."""
+        return self.tree.nodes[tnode]['source']
+
+    def visits(self, tnode: str) -> int:
+        """Returns the number of times this tree node was
+        visited in the demonstrations."""
+        return self.tree.nodes[tnode]['visits']
+
+    @property
+    def ndemos(self) -> int:
+        """Number of demonstrations this prefix tree represents."""
+        return self.vists(self.root)
+
     def log_likelihood(self, ctrl: BVPolicy, relative=False) -> float:
         if not relative:
             raise NotImplementedError
 
+        logp = 0
+        for edge in self._generate_product_edges(ctrl.spec):
+            (tnode, qbv_node), (tnode2, qbv_node2) = edge
+            action, visits = self.action(tnode2), self.visits(tnode2)
+
+            if qbv_node.is_decision:
+                logp += visits * ctrl.prob(qbv_node, action, log=True)
+
+        return logp
+
+    def _generate_product_edges(self, spec: ConcreteSpec):
+        """Walk edges of the synchronous composition of the prefix
+        tree and a concrete spec's bit-vector qdd."""
         # TODO: consider letting spec produce qbvnodes.
-        order = ctrl.bitpolicy.spec.order
-        qnode = ctrl.bitpolicy.spec._as_dfa(qdd=True).start
+        order = spec.order
+        qnode = spec._as_dfa(qdd=True).start
 
         qbv_root = QBVNode(qnode, order)
         stack = [(self.root, qbv_root)]
-        logp = 0
+        while stack:
+            tnode, qbv_node = stack.pop()
+            for tnode2 in self.tree.neighbors(tnode):
+                qbv_node2 = qbv_node.transition(self.action(tnode2))
+                yield (tnode, qbv_node), (tnode2, qbv_node2)
+                stack.append((tnode2, qbv_node2))
+
+    
+    def psat(self, spec: ConcreteSpec):
+        order = spec.order
+        qnode = spec._as_dfa(qdd=True).start
+
+        qbv_root = QBVNode(qnode, order)
+        stack = [(self.root, qbv_root)]
         while stack:
             tnode, qbv_node = stack.pop()
 
@@ -54,9 +94,7 @@ class PrefixTree:
                 stack.append((tnode2, qbv_node2))
 
         return logp
-    
-    def psat(self, spec: ConcreteSpec):
-        # TODO
+        # TODO 
         pass
             
 

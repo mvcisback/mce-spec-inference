@@ -238,6 +238,10 @@ class BVPolicy:
     def size(self):
         return self.bitpolicy.size
 
+    @property
+    def spec(self):
+        return self.bitpolicy.spec
+
 
 Policy = Union[BitPolicy, BVPolicy]
 
