@@ -1,5 +1,6 @@
 __all__ = ["ConcreteSpec", "concretize"]
 
+from functools import lru_cache
 from typing import FrozenSet, Sequence, Mapping, Tuple
 
 import attr
@@ -111,11 +112,11 @@ class ConcreteSpec:
 
         return attr.evolve(self, bexpr=xor(self.bexpr, bexpr))
 
-    @fn.cache(60 * 5)  # Evict after 5 minutes.
+    @lru_cache
     def _unrolled(self) -> BV.AIGBV:
         return self.dyn.unroll(self.horizon)
 
-    @fn.cache(60 * 1)  # Evict after 1 minute.
+    @lru_cache
     def _as_dfa(self, qdd=False) -> DFA:
         """
         Returns a dfa with binary alphabet which models the

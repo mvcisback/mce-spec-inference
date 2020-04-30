@@ -1,7 +1,9 @@
-__all__ = ["BitPolicy", "policy", "fit"]
+from __future__ import annotations
+
+__all__ = ["BitPolicy", "policy", "fit", "BVPolicy"]
 
 import random
-from functools import partial
+from functools import partial, lru_cache
 from typing import Tuple, List, Optional, Hashable, Mapping
 
 import attr
@@ -12,9 +14,11 @@ import scipy as sp
 from bidict import bidict
 from scipy.special import logsumexp
 from scipy.optimize import brentq
+from bdd2dfa.b2d import QNode
 
 from mce.spec import ConcreteSpec
 from mce.nx import spec2graph
+from mce.qbvnode import QBVNode
 
 
 @attr.s(frozen=True, auto_attribs=True)
@@ -41,6 +45,9 @@ class BitPolicy:
         
     def prob(self, node, action, log=False, qdd=False) -> float:
         """Probability of agent applying action given bdd node."""
+        if isinstance(node, QNode):
+            node = (node.ref, node.debt)
+
         if action is None:
             prob = 1
         else:
@@ -141,7 +148,7 @@ class BitPolicy:
 def policy(spec: ConcreteSpec, coeff: Optional[float] = None) -> BitPolicy:
     reference_graph, root, real_sinks = spec2graph(spec)
 
-    @fn.cache(5)  # Cache results for 5 seconds.
+    @lru_cache(maxsize=3)
     def ppolicy(coeff):
         graph = reference_graph.reverse(copy=True)
 
@@ -227,3 +234,26 @@ def fit(cspec: ConcreteSpec, psat: float, top: float=100) -> BitPolicy:
         coeff = 0  
 
     return pctrl(coeff)
+
+
+@attr.s(frozen=True, auto_attribs=True)
+class BVPolicy:
+    bitpolicy: BitPolicy
+
+    @property
+    def psat(self) -> float:
+        return self.bitpolicy.psat
+
+    def prob(self, node, action, log=False) -> float:
+        logp = 0
+
+        if isinstance(node, QNode):
+            node = QBVNode(node, self.bitpolicy.spec.order)
+        assert isinstance(node, QBVNode)
+
+        _, trc = node.trace(action)
+        for qnode, bit in trc:
+            logp += self.bitpolicy.prob(qnode, bit, log=True, qdd=True)
+            qnode = qnode.transition(bit)
+
+        return logp if log else np.exp(logp)

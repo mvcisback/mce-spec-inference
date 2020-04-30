@@ -12,7 +12,7 @@ from networkx.drawing.nx_pydot import write_dot
 from mce.test_scenarios import scenario1, scenario_reactive
 from mce.test_scenarios import DET_SCENARIOS, SCENARIOS
 from mce.spec import concretize
-from mce.policy3 import policy, fit
+from mce.policy3 import policy, fit, BVPolicy
 
 
 def test_policy():
@@ -110,3 +110,14 @@ def test_psat_monotonicity(scenario):
         ctrl = policy(cspec, i)
         prev, prob = prob, ctrl.psat
         assert prev <= prob
+
+
+def test_bv_policy():
+    spec, mdp = scenario_reactive()
+    cspec = concretize(spec, mdp, 3)
+    ctrl = fit(cspec, 0.96)
+
+    qdd = cspec._as_dfa(qdd=True)
+
+    ctrl_bv = BVPolicy(ctrl)
+    ctrl_bv.prob(qdd.start, {'a': (False, False)})
