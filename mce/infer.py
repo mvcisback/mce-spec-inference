@@ -5,7 +5,7 @@ import funcy as fn
 
 from mce.policy3 import fit
 from mce.spec import concretize
-from mce.demos import encode_trcs, log_likelihoods
+from mce.demos import encode_trcs, log_likelihoods, prefix_tree
 
 
 def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
@@ -15,9 +15,10 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
     """
     horizon = len(demos[0][0])
     specs = list(specs)
-
+    
     start_time = time.time()
     print("encoding traces")
+    tree = prefix_tree(mdp, demos)
     encoded_trcs = encode_trcs(mdp, demos)
     print(f"done encoding traces")
 
@@ -39,13 +40,14 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
 
         start_time = time.time()
         print("fitting policy")
-        ctrl = fit(cspec, sat_prob)
+        ctrl = fit(cspec, sat_prob, bv=True)
         print(f"done fitting")
         times["fit"] = time.time() - start_time
 
         start_time = time.time()
         print(f"compute log likelihood of demos")
-        lprob = log_likelihoods(ctrl, encoded_trcs)
+        #lprob = log_likelihoods(ctrl, encoded_trcs)
+        lprob = tree.log_likelihood(ctrl, relative=True)
 
         times["surprise"] = time.time() - start_time
 

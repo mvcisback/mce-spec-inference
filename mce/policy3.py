@@ -234,6 +234,10 @@ class BVPolicy:
 
         return logp if log else np.exp(logp)
 
+    @property
+    def size(self):
+        return self.bitpolicy.size
+
 
 Policy = Union[BitPolicy, BVPolicy]
 

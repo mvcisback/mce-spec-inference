@@ -54,6 +54,10 @@ class PrefixTree:
                 stack.append((tnode2, qbv_node2))
 
         return logp
+    
+    def psat(self, spec: ConcreteSpec):
+        # TODO
+        pass
             
 
 

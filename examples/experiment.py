@@ -234,7 +234,7 @@ def infer():
     )
 
     def normalize(score):
-        return int(score / spec2score[SPEC2MONITORS[CONST_TRUE]] * 100)
+        return int(round(score - spec2score[SPEC2MONITORS[CONST_TRUE]]))
 
     best_score = normalize(spec2score[best])
 
@@ -247,7 +247,7 @@ def infer():
     )
 
     print('\n' + "="*80)
-    print('        100 * (log likelihood(spec) / log_likelihood(True))'.rjust(40) + '\n')
+    print('        (log likelihood(spec) - log_likelihood(True))'.rjust(40) + '\n')
     print('(higher is better)'.rjust(41))
     print("="*80)
     fig.show()
