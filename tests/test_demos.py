@@ -101,5 +101,7 @@ def test_prefix_tree():
 
     cspec = concretize(spec, sys, 3)
     ctrl = fit(cspec, 0.7, bv=True)
-    lprob = tree.log_likelihood(ctrl, relative=True)
+    lprob = tree.log_likelihood(ctrl, actions_only=True)
     assert lprob < 0
+
+    assert tree.psat(cspec) == 1/2

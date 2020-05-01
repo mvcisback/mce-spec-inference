@@ -5,7 +5,7 @@ import funcy as fn
 
 from mce.policy3 import fit
 from mce.spec import concretize
-from mce.demos import encode_trcs, log_likelihoods, prefix_tree
+from mce.demos import prefix_tree
 
 
 def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
@@ -19,7 +19,6 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
     start_time = time.time()
     print("encoding traces")
     tree = prefix_tree(mdp, demos)
-    encoded_trcs = encode_trcs(mdp, demos)
     print(f"done encoding traces")
 
     @fn.memoize
@@ -33,8 +32,7 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
         times["build spec"] = time.time() - start_time
 
         if psat is None:
-            sat_prob = sum(cspec.accepts(trc) for trc in encoded_trcs)
-            sat_prob /= len(encoded_trcs)
+            sat_prob = tree.psat(cspec)
         else:
             sat_prob = psat
 
@@ -46,8 +44,7 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
 
         start_time = time.time()
         print(f"compute log likelihood of demos")
-        #lprob = log_likelihoods(ctrl, encoded_trcs)
-        lprob = tree.log_likelihood(ctrl, relative=True)
+        lprob = tree.log_likelihood(ctrl, actions_only=True)
 
         times["surprise"] = time.time() - start_time
 
