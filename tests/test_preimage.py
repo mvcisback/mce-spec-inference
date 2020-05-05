@@ -18,7 +18,7 @@ def test_preimage():
     sys2 = sys1 >> BV.aig2aigbv(spec.aig)
 
     def act(action, coin):
-        return {'a': (action,), 'c': (coin,),}
+        return {'a': (action,), 'c': (coin,)}
 
     actions = [act(True, True), act(True, False), act(True, True)]
     observations = fn.lpluck(0, sys1.simulate(actions))
