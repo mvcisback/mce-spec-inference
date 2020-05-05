@@ -95,8 +95,10 @@ def interleave(dyn, etrc):
     2. Makes dictionaries hashable for prefix tree.
     """
     for inputs in etrc:
-        yield tuple(fn.project(inputs, dyn.inputs).items())
-        yield tuple(fn.project(inputs, dyn.env_inputs).items())
+        if dyn.inputs:
+            yield tuple(fn.project(inputs, dyn.inputs).items())
+        if dyn.env_inputs:
+            yield tuple(fn.project(inputs, dyn.env_inputs).items())
 
 
 def annotate_visits(tree, root, encoded):

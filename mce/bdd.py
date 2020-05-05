@@ -9,10 +9,7 @@ import aiger_bdd
 import funcy as fn
 from aiger import common as cmn
 
-try:
-    from dd.cudd import BDD
-except ImportError:
-    from dd.autoref import BDD
+from dd.autoref import BDD
 
 from mce.order import BitOrder
 
