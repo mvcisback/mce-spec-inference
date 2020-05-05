@@ -15,7 +15,8 @@ from dfa import DFA
 
 from mce.preimage import preimage
 from mce.order import BitOrder
-from mce.bdd import to_bdd2, TIMED_INPUT_MATCHER
+from mce.bdd import to_bdd2
+from mce.utils import TIMED_INPUT_MATCHER
 
 
 Action = Mapping[str, Sequence[bool]]

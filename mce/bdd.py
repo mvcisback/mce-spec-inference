@@ -1,4 +1,4 @@
-__all__ = ['TIMED_INPUT_MATCHER', 'to_bdd2']
+__all__ = ['to_bdd2']
 
 import re
 
@@ -8,7 +8,7 @@ import funcy as fn
 from dd.autoref import BDD
 
 from mce.order import BitOrder
-from mce.utils import cone, interpret_unrolled, Atom, Literal, TIMED_INPUT_MATCHER
+from mce.utils import cone, interpret_unrolled, Atom, Literal
 
 
 def ordered_bdd_atom_fact(mdp, output, horizon, manager=None) -> Atom:

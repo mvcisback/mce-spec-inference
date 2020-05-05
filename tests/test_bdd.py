@@ -3,7 +3,8 @@ import aiger_coins as C
 import aiger_ptltl as PLTL
 import funcy as fn
 
-from mce.bdd import TIMED_INPUT_MATCHER, to_bdd2
+from mce.bdd import to_bdd2
+from mce.utils import TIMED_INPUT_MATCHER
 from mce.test_scenarios import scenario_reactive
 
 

@@ -13,7 +13,7 @@ from pyrsistent import pmap
 from bdd2dfa.b2d import QNode
 
 from mce.order import BitOrder
-from mce.bdd import TIMED_INPUT_MATCHER
+from mce.utils import TIMED_INPUT_MATCHER
 
 
 Trace = List[Tuple[QNode, bool]]
