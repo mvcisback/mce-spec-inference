@@ -18,22 +18,22 @@ bidict = "^0.18.3"
 dfa = {version = "^2.0.0", extras = ["draw"]}
 funcy = "^1.13"
 multiprocess = "^0.70.9"
-py-aiger-bdd = "^0.3.1"
-py-aiger-bv = "^2.0.0"
-py-aiger-coins = {version = "^1.4.0", extras = ["sat", "bdd"]}
-py-aiger-sat = "^1.1.0"
+py-aiger = "^6.0.0"
+py-aiger-bdd = "^3.0.0"
+py-aiger-bv = "^4.0.0"
+py-aiger-coins = {version = "^2.0.0", extras = ["sat", "bdd"]}
+py-aiger-sat = "^2.0.0"
 scipy = "^1.4.1"
 
 [tool.poetry.dev-dependencies]
-
 codecov = "^2.0"
 hypothesis = "^4.42"
 ipython = "^7.13.0"
 jupyter = {extras = ["notebook"], version = "^1.0.0"}
 matplotlib = "^3.2.1"
 notebook = "^6.0.3"
-py-aiger-gridworld = "^0.2.0"
-py-aiger-ptltl = "^1.2.0"
+py-aiger-gridworld = "^0.3.0"
+py-aiger-ptltl = "^3.0.0"
 pytest-cov = "^2.7"
 pytest-flake8 = "^1.0"
 pytest-xdist = "^1.29"
