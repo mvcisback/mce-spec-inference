@@ -4,9 +4,7 @@ import operator as op
 from functools import reduce
 from typing import TypeVar, Mapping, Tuple, List, Iterable
 
-
-
-# import aiger_coins as C
+import attr
 import aiger_bv as BV
 
 
@@ -27,14 +25,15 @@ def gen_equiv_checks(aps: AtomicPreds) -> Iterable[BVExpr]:
             yield sym == sym_val
 
 
-def preimage(aps: AtomicPreds, mdp: BV.AIGBV, is_unrolled=False) -> BVExpr:
+def preimage(aps: AtomicPreds, mdp: BV.AIGBV) -> BVExpr:
     """
     Returns a circuit which checks if an action sequence results in a
     given sequence of observations/atomic predicates (aps).
     """
     assert len(aps) > 1
-
-    unrolled = mdp if is_unrolled else mdp.unroll(len(aps)) 
+    mdp = attr.evolve(mdp, aig=mdp.aig.lazy_aig)  # Make AIGBV lazy.
+    
+    unrolled = mdp.unroll(len(aps))
         
     check_val = reduce(op.and_, gen_equiv_checks(aps)).aigbv
 

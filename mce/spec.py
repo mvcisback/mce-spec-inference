@@ -106,7 +106,7 @@ class ConcreteSpec:
         """Toggles a sequence of (sys, env) actions."""
         assert len(actions) == self.horizon
         aps = fn.lpluck(0, self.dyn.simulate(actions))
-        expr = preimage(aps=aps, mdp=self._unrolled(), is_unrolled=True)
+        expr = preimage(aps=aps, mdp=self.dyn)
         bexpr, *_ = aiger_bdd.to_bdd(
             expr, manager=self.manager, renamer=lambda _, x: x
         )

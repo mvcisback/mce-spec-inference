@@ -105,7 +105,6 @@ def annotate_visits(tree, root, encoded):
     """Returns counter indicating how often each edge was 
        visited in the demonstrations.
     """
-
     for node in tree.nodes:
         tree.nodes[node]['visits'] = 0
 
