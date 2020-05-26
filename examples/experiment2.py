@@ -28,11 +28,8 @@ def mask_test(xmask, ymask):
 
 
 APS = {
-    'yellow': mask_test(0b1000_0001, 0b1000_0001),
-    'blue': mask_test(0b0001_1000, 0b0011100),
-    'cyan': mask_test(0b0011_1100, 0b1000_0001),
-    'red': mask_test(0b1000_0001, 0b0100_1100) \
-    | mask_test(0b0100_0010, 0b1100_1100),
+    'yellow': mask_test(0b1100_0000, 0b0000_0001),
+    'red': mask_test(0b0011_1111, 0b1111_1111)
 }
 
 
@@ -44,7 +41,7 @@ def create_sensor(aps):
 
 
 SENSOR = create_sensor(APS)
-DYN = GW.gridworld(8, start=(3, 5), compressed_inputs=True)
+DYN = GW.gridworld(8, start=(8, 8), compressed_inputs=True)
 
 SLIP = BV.atom(1, 'c', signed=False).repeat(2) & BV.atom(2, 'a', signed=False)
 SLIP = SLIP.with_output('a').aigbv
@@ -63,7 +60,7 @@ def ap_at_state(x, y, in_ascii=False):
     if not in_ascii:
         return obs
 
-    for k, code in {'yellow': 3, 'blue': 4, 'cyan': 6, 'red': 1}.items():
+    for k, code in {'yellow': 3, 'red': 1}.items():
         if obs[k][0]:
             return TERM.on_color(code)(' ')
     return TERM.on_color(7)(' ')
@@ -96,53 +93,19 @@ def str2actions(vals):
     return [ACTION2ARROW.inv[c] for c in vals]
 
 
-ACTIONS0 = "→→↑↑↑↑→→→"
+ACTIONS0 = "↑↑→↑↑↑→←←←←←←←←"
 STATES0 = (
-    (4, 5), (5, 5), (5, 4), (5, 3),
-    (5, 2), (5, 1), (6, 1), (7, 1), (8, 1)
+    (8, 7), (7, 7), (8, 7), (8, 6),
+    (8, 5), (7, 5), (6, 5), 
+    (5, 5), (4, 5),(3, 5), (2, 5),
+    (1, 5), (1, 5),(1, 5), (1, 5),
 )
 TRC0 = (ACTIONS0, STATES0)
 
-ACTIONS1 = "↑↑↑↑←←←←←"
-STATES1 = (
-    (3, 4), (3, 3), (3, 2), (3, 1),
-    (2, 1), (1, 1), (1, 1), (1, 1), (1, 1),
-)
-TRC1 = (ACTIONS1, STATES1)
+print(len(ACTIONS0))
+print(len(STATES0))
 
-ACTIONS2 = "←→↑↑↑←↑←←"
-STATES2 = (
-    (2, 5), (3, 5), (3, 4), (3, 3), (3, 2),
-    (2, 2), (2, 1), (1, 1), (1, 1)
-)
-TRC2 = (ACTIONS2, STATES2)
-
-
-ACTIONS3 = "↑↑→←↑↑←←←"
-STATES3 = (
-    (3, 4), (3, 3), (4, 3), (3, 3), 
-    (3, 2), (3, 1), (2, 1), (1, 1), (1, 1)
-)
-TRC3 = (ACTIONS3, STATES3)
-
-ACTIONS4 = "↑→↑↑↑←←←←"
-STATES4 = (
-    (3, 4), (4, 4), (4, 3), (4, 2), 
-    (4, 1), (3, 1), (2, 1), (1, 1), (1, 1)
-)
-TRC4 = (ACTIONS4, STATES4)
-
-
-ACTIONS5 = "↑→↑↑←←←↑↑"
-STATES5 = (
-    (3, 4), (4, 4), (4, 3), (4, 2), 
-    (3, 2), (2, 2), (1, 2), (1, 1), (1, 1)
-)
-TRC5 = (ACTIONS5, STATES5)
-
-
-TRACES = [TRC0, TRC1, TRC2, TRC3, TRC4] \
-    + [TRC5] + [TRC4]*2
+TRACES = [TRC0]
 
 
 def encode_trace(trc):
@@ -172,40 +135,32 @@ def validate_trace(trc):
 # ============== Specifications ====================
 
 
-LAVA, RECHARGE, WATER, DRY = map(LTL.atom, ['red', 'yellow', 'blue', 'cyan'])
+LAVA, RECHARGE = map(LTL.atom, ['red', 'yellow'])
 
 EVENTUALLY_RECHARGE = RECHARGE.once()
 AVOID_LAVA = (~LAVA).historically()
-
-RECHARGED_AND_ONCE_WET = RECHARGE & WATER.once()
-DRIED_OFF = (~WATER).since(DRY)
-
-DIDNT_RECHARGE_WHILE_WET = (RECHARGED_AND_ONCE_WET).implies(DRIED_OFF)
-DONT_RECHARGE_WHILE_WET = DIDNT_RECHARGE_WHILE_WET.historically()
 
 CONST_TRUE = LTL.atom(True)
 
 
 SPECS = [
-    CONST_TRUE, AVOID_LAVA, EVENTUALLY_RECHARGE, DONT_RECHARGE_WHILE_WET,
-    AVOID_LAVA & EVENTUALLY_RECHARGE & DONT_RECHARGE_WHILE_WET,
+    CONST_TRUE,
+    AVOID_LAVA, 
+    EVENTUALLY_RECHARGE,
     AVOID_LAVA & EVENTUALLY_RECHARGE,
-    AVOID_LAVA & DONT_RECHARGE_WHILE_WET,
-    EVENTUALLY_RECHARGE & DONT_RECHARGE_WHILE_WET,
 ]
 
 
 SPEC_NAMES = [
-    "CONST_TRUE", "AVOID_LAVA", "EVENTUALLY_RECHARGE", "DONT_RECHARGE_WHILE_WET",
-    "AVOID_LAVA & EVENTUALLY_RECHARGE & DONT_RECHARGE_WHILE_WET",
+    "CONST_TRUE", 
+    "AVOID_LAVA",
+    "EVENTUALLY_RECHARGE",
     "AVOID_LAVA & EVENTUALLY_RECHARGE",
-    "AVOID_LAVA & DONT_RECHARGE_WHILE_WET",
-    "EVENTUALLY_RECHARGE & DONT_RECHARGE_WHILE_WET",
 ]
 
 
 def spec2monitor(spec):
-    monitor = spec.aig | A.sink(['red', 'yellow', 'cyan', 'blue'])
+    monitor = spec.aig | A.sink(['red', 'yellow'])
     monitor = monitor['o', {spec.output: 'sat'}]
     monitor = BV.aig2aigbv(monitor)
     return SENSOR >> monitor
@@ -230,9 +185,10 @@ def infer():
     trcs = [encode_trace(trc) for trc in TRACES]
     mdp = DYN2
     best, spec2score = spec_mle(
-        mdp, trcs, SPEC2MONITORS.values(), parallel=False
+        mdp, trcs, SPEC2MONITORS.values(), parallel=False, psat=0.9
     )
 
+    breakpoint()
     def normalize(score):
         return int(round(score - spec2score[SPEC2MONITORS[CONST_TRUE]]))
 
@@ -245,6 +201,7 @@ def infer():
         force_ascii=False,
         show_vals=True,
     )
+
 
     print('\n' + "="*80)
     print('        (log likelihood(spec) - log_likelihood(True))'.rjust(40) + '\n')
@@ -261,7 +218,7 @@ def infer():
 
 def main():
     print_map()
-    
+
     for i, trc in enumerate(set(TRACES)):
         print()
         print(f'trace {i}')

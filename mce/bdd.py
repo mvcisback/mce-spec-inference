@@ -9,7 +9,7 @@ import funcy as fn
 from dd.autoref import BDD
 
 from mce.order import BitOrder
-from mce.utils import cone, interpret_unrolled, Atom, Literal
+from mce.utils import cone, Atom, Literal
 
 
 def to_bdd2(mdp, horizon, output=None, manager=None):
