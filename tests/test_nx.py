@@ -14,7 +14,6 @@ def test_spec2graph():
 
     graph, root, _ = spec2graph(cspec)
 
-
     assert nx.is_directed_acyclic_graph(graph)
 
     # BDD size
@@ -29,7 +28,7 @@ def test_reweighted():
     spec, sys = scenario_reactive()
 
     # Hack too re-weight coinl
-    sys2 = C.coin((1, 4), 'c') >> C.MDP(sys.aigbv >> BV.sink(1, ['##valid']) )
+    sys2 = C.coin((1, 4), 'c') >> C.MDP(sys.aigbv >> BV.sink(1, ['##valid']))
     cspec2 = concretize(spec, sys2, 3)
 
     graph, root, _ = spec2graph(cspec2)

@@ -24,7 +24,7 @@ Y = BV.atom(8, 'y', signed=False)
 
 
 def mask_test(xmask, ymask):
-    return ((X & xmask) !=0) & ((Y & ymask) != 0)
+    return ((X & xmask) != 0) & ((Y & ymask) != 0)
 
 
 APS = {
@@ -96,9 +96,9 @@ def str2actions(vals):
 ACTIONS0 = "↑↑→↑↑↑→←←←←←←←←"
 STATES0 = (
     (8, 7), (7, 7), (8, 7), (8, 6),
-    (8, 5), (7, 5), (6, 5), 
-    (5, 5), (4, 5),(3, 5), (2, 5),
-    (1, 5), (1, 5),(1, 5), (1, 5),
+    (8, 5), (7, 5), (6, 5),
+    (5, 5), (4, 5), (3, 5), (2, 5),
+    (1, 5), (1, 5), (1, 5), (1, 5),
 )
 TRC0 = (ACTIONS0, STATES0)
 
@@ -118,18 +118,10 @@ def encode_trace(trc):
 
 def decode_states(observations):
     observations = [
-        {k: v.index(True) + 1 for k, v in obs[0].items()} for obs in observations
+        {k: v.index(True) + 1 for k, v in obs[0].items()}
+        for obs in observations
     ]
     return [(obs['x'], obs['y']) for obs in observations]
-
-
-def validate_trace(trc):
-    actions, states = encode_trace(trc)
-    states2 = DYN.simulate(actions)
-    states2 = [s for s, l in states2]
-    #states2 = decode_states(states2)
-
-    print(f"  consistent states: {states == states2}")
 
 
 # ============== Specifications ====================
@@ -145,14 +137,14 @@ CONST_TRUE = LTL.atom(True)
 
 SPECS = [
     CONST_TRUE,
-    AVOID_LAVA, 
+    AVOID_LAVA,
     EVENTUALLY_RECHARGE,
     AVOID_LAVA & EVENTUALLY_RECHARGE,
 ]
 
 
 SPEC_NAMES = [
-    "CONST_TRUE", 
+    "CONST_TRUE",
     "AVOID_LAVA",
     "EVENTUALLY_RECHARGE",
     "AVOID_LAVA & EVENTUALLY_RECHARGE",
@@ -164,7 +156,7 @@ def spec2monitor(spec):
     monitor = monitor['o', {spec.output: 'sat'}]
     monitor = BV.aig2aigbv(monitor)
     return SENSOR >> monitor
-    
+
 
 SPEC2MONITORS = {
     spec: spec2monitor(spec) for spec in SPECS
@@ -188,7 +180,6 @@ def infer():
         mdp, trcs, SPEC2MONITORS.values(), parallel=False, psat=0.9
     )
 
-    breakpoint()
     def normalize(score):
         return int(round(score - spec2score[SPEC2MONITORS[CONST_TRUE]]))
 
@@ -202,14 +193,13 @@ def infer():
         show_vals=True,
     )
 
-
     print('\n' + "="*80)
-    print('        (log likelihood(spec) - log_likelihood(True))'.rjust(40) + '\n')
+    print('    (log likelihood(spec) - log_likelihood(True))'.rjust(40) + '\n')
     print('(higher is better)'.rjust(41))
     print("="*80)
     fig.show()
     print(f"\n\nbest score: {abs(best_score)}")
-    
+
     return best
 
 

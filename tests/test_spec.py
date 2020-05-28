@@ -1,5 +1,3 @@
-import aiger_bv as BV
-import aiger_coins as C
 import funcy as fn
 
 from mce.test_scenarios import scenario_reactive
@@ -7,7 +5,7 @@ from mce.spec import concretize
 
 
 def act(action, coin):
-    return {'a': (action,), 'c': (coin,),}
+    return {'a': (action,), 'c': (coin,)}
 
 
 def test_concretize():
@@ -33,7 +31,7 @@ def test_flatten():
     actions = [act(True, True), act(True, False), act(True, True)]
     bits = cspec.flatten(actions)
     assert bits == [True, True, True, False, True, True]
-    
+
     assert cspec.unflatten(bits) == actions
 
 
@@ -48,4 +46,6 @@ def test_abstract_trace():
             assert prev.node.level == 6
             assert prev.node == cspec.manager.false
         else:
-            assert (curr.node.level, -curr.debt) < (prev.node.level, -prev.debt)
+            clvl, cdebt = curr.node.level, curr.debt
+            plvl, pdebt = prev.node.level, prev.debt
+            assert (clvl, -cdebt) < (plvl, -pdebt)

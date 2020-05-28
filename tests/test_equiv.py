@@ -2,7 +2,6 @@ import aiger_bv as BV
 import aiger_coins as C
 import aiger_ptltl as LTL
 
-from mce.test_scenarios import scenario_reactive
 from mce.equiv import equiv_states
 
 

@@ -15,11 +15,10 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
     """
     horizon = len(demos[0][0])
     specs = list(specs)
-    
-    start_time = time.time()
+
     print("encoding traces")
     tree = prefix_tree(mdp, demos)
-    print(f"done encoding traces")
+    print("done encoding traces")
 
     @fn.memoize
     def score(spec):
@@ -39,11 +38,11 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
         start_time = time.time()
         print("fitting policy")
         ctrl = fit(cspec, sat_prob, bv=True)
-        print(f"done fitting")
+        print("done fitting")
         times["fit"] = time.time() - start_time
 
         start_time = time.time()
-        print(f"compute log likelihood of demos")
+        print("compute log likelihood of demos")
         lprob = tree.log_likelihood(ctrl, actions_only=True)
 
         times["surprise"] = time.time() - start_time

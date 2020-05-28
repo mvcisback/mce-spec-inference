@@ -24,15 +24,15 @@ Y = BV.atom(8, 'y', signed=False)
 
 
 def mask_test(xmask, ymask):
-    return ((X & xmask) !=0) & ((Y & ymask) != 0)
+    return ((X & xmask) != 0) & ((Y & ymask) != 0)
 
 
 APS = {
     'yellow': mask_test(0b1000_0001, 0b1000_0001),
     'blue': mask_test(0b0001_1000, 0b0011100),
     'cyan': mask_test(0b0011_1100, 0b1000_0001),
-    'red': mask_test(0b1000_0001, 0b0100_1100) \
-    | mask_test(0b0100_0010, 0b1100_1100),
+    'red': mask_test(0b1000_0001, 0b0100_1100)
+        |  mask_test(0b0100_0010, 0b1100_1100),  # noqa: E131, E222
 }
 
 
@@ -120,14 +120,14 @@ TRC2 = (ACTIONS2, STATES2)
 
 ACTIONS3 = "↑↑→←↑↑←←←"
 STATES3 = (
-    (3, 4), (3, 3), (4, 3), (3, 3), 
+    (3, 4), (3, 3), (4, 3), (3, 3),
     (3, 2), (3, 1), (2, 1), (1, 1), (1, 1)
 )
 TRC3 = (ACTIONS3, STATES3)
 
 ACTIONS4 = "↑→↑↑↑←←←←"
 STATES4 = (
-    (3, 4), (4, 4), (4, 3), (4, 2), 
+    (3, 4), (4, 4), (4, 3), (4, 2),
     (4, 1), (3, 1), (2, 1), (1, 1), (1, 1)
 )
 TRC4 = (ACTIONS4, STATES4)
@@ -135,7 +135,7 @@ TRC4 = (ACTIONS4, STATES4)
 
 ACTIONS5 = "↑→↑↑←←←↑↑"
 STATES5 = (
-    (3, 4), (4, 4), (4, 3), (4, 2), 
+    (3, 4), (4, 4), (4, 3), (4, 2),
     (3, 2), (2, 2), (1, 2), (1, 1), (1, 1)
 )
 TRC5 = (ACTIONS5, STATES5)
@@ -155,18 +155,10 @@ def encode_trace(trc):
 
 def decode_states(observations):
     observations = [
-        {k: v.index(True) + 1 for k, v in obs[0].items()} for obs in observations
+        {k: v.index(True) + 1 for k, v in obs[0].items()}
+        for obs in observations
     ]
     return [(obs['x'], obs['y']) for obs in observations]
-
-
-def validate_trace(trc):
-    actions, states = encode_trace(trc)
-    states2 = DYN.simulate(actions)
-    states2 = [s for s, l in states2]
-    #states2 = decode_states(states2)
-
-    print(f"  consistent states: {states == states2}")
 
 
 # ============== Specifications ====================
@@ -196,7 +188,8 @@ SPECS = [
 
 
 SPEC_NAMES = [
-    "CONST_TRUE", "AVOID_LAVA", "EVENTUALLY_RECHARGE", "DONT_RECHARGE_WHILE_WET",
+    "CONST_TRUE",
+    "AVOID_LAVA", "EVENTUALLY_RECHARGE", "DONT_RECHARGE_WHILE_WET",
     "AVOID_LAVA & EVENTUALLY_RECHARGE & DONT_RECHARGE_WHILE_WET",
     "AVOID_LAVA & EVENTUALLY_RECHARGE",
     "AVOID_LAVA & DONT_RECHARGE_WHILE_WET",
@@ -209,7 +202,7 @@ def spec2monitor(spec):
     monitor = monitor['o', {spec.output: 'sat'}]
     monitor = BV.aig2aigbv(monitor)
     return SENSOR >> monitor
-    
+
 
 SPEC2MONITORS = {
     spec: spec2monitor(spec) for spec in SPECS
@@ -247,12 +240,12 @@ def infer():
     )
 
     print('\n' + "="*80)
-    print('        (log likelihood(spec) - log_likelihood(True))'.rjust(40) + '\n')
+    print('    (log likelihood(spec) - log_likelihood(True))'.rjust(40) + '\n')
     print('(higher is better)'.rjust(41))
     print("="*80)
     fig.show()
     print(f"\n\nbest score: {abs(best_score)}")
-    
+
     return best
 
 
@@ -261,7 +254,7 @@ def infer():
 
 def main():
     print_map()
-    
+
     for i, trc in enumerate(set(TRACES)):
         print()
         print(f'trace {i}')

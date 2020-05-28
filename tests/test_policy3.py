@@ -1,16 +1,12 @@
 import pytest
 
-import aiger_bv as BV
-import aiger_coins as C
 import funcy as fn
-import networkx as nx
 import numpy as np
 import scipy as sp
-from hypothesis import given, settings
-from networkx.drawing.nx_pydot import write_dot
+from hypothesis import given
 
 from mce.test_scenarios import scenario1, scenario_reactive
-from mce.test_scenarios import DET_SCENARIOS, SCENARIOS
+from mce.test_scenarios import SCENARIOS
 from mce.spec import concretize
 from mce.policy3 import policy, fit, BVPolicy
 
@@ -25,7 +21,7 @@ def test_policy():
         assert len(ctrl.ref2action_dist) == 5
         assert all(len(v) == 2 for v in ctrl.ref2action_dist.values())
         assert all(
-            sum(v.values()) == pytest.approx(1) 
+            sum(v.values()) == pytest.approx(1)
             for v in ctrl.ref2action_dist.values()
         )
 

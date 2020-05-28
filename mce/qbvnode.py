@@ -8,7 +8,6 @@ from functools import lru_cache
 from typing import Tuple, List
 
 import attr
-import funcy
 from pyrsistent import pmap
 from bdd2dfa.b2d import QNode
 

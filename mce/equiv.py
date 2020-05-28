@@ -3,7 +3,6 @@ Code for checking if two trajectories index the same time unrolled state.
 """
 from typing import Iterator
 
-import attr
 import aiger
 import aiger_sat
 import aiger_bv as BV
@@ -21,7 +20,7 @@ def bmc_equiv(circ1, circ2, horizon, assume=None) -> Iterator[bool]:
         size = circ1.omap[o1].size
         expr |= BV.uatom(size, o1) != BV.uatom(size, o2)
     expr.with_output('distinguished')
-    
+
     monitor = ((circ1 | circ2) >> expr.aigbv).aig
     assert len(monitor.outputs) == 1
 
@@ -56,8 +55,8 @@ def equiv_states(mdp, horizon, time, state1, state2):
     circ1 = circ1.reinit(state1)
 
     # Give circ2 different symbol names from circ1.
-    circ2 = circ2['o', {o: f'{o}##copy' for o in circ1.outputs}]
-    circ2 = circ2['l', {l: f'{l}##copy' for l in circ1.latches}]
+    circ2 = circ2['o', {k: f'{k}##copy' for k in circ1.outputs}]
+    circ2 = circ2['l', {k: f'{k}##copy' for k in circ1.latches}]
 
     return not any(bmc_equiv(circ1, circ2, horizon - time))
 

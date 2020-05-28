@@ -1,11 +1,7 @@
 __all__ = ['spec2graph']
 
-from typing import Optional
-
-import attr
 import funcy as fn
 import networkx as nx
-from bdd2dfa.b2d import to_dfa, BNode
 
 from mce.spec import ConcreteSpec
 
@@ -14,7 +10,7 @@ def spec2graph(spec: ConcreteSpec, qdd=False, dprob=None) -> nx.DiGraph:
     dfa = spec._as_dfa(qdd=qdd)
 
     if dprob is None:
-        dprob = lambda *_: None
+        dprob = fn.constantly(None)
 
     def is_sink(state) -> bool:
         return state.node.var is None
@@ -51,7 +47,7 @@ def spec2graph(spec: ConcreteSpec, qdd=False, dprob=None) -> nx.DiGraph:
 
             if succ == state:  # Sink
                 sinks.add(_node(succ))
-                continue                
+                continue
 
             if qdd and state.debt > 0:
                 g.add_edge(_node(state), _node(succ), action=None, prob=1)
@@ -67,5 +63,5 @@ def spec2graph(spec: ConcreteSpec, qdd=False, dprob=None) -> nx.DiGraph:
     for sink in sinks:
         g.add_edge(sink, "DUMMY", action=None, prob=1)
 
-    g = nx.freeze(g)    
+    g = nx.freeze(g)
     return g, _node(dfa.start), list(sinks)

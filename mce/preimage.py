@@ -2,7 +2,7 @@ __all__ = ["preimage"]
 
 import operator as op
 from functools import reduce
-from typing import TypeVar, Mapping, Tuple, List, Iterable
+from typing import Mapping, Tuple, List, Iterable
 
 import attr
 import aiger_bv as BV
@@ -32,13 +32,13 @@ def preimage(aps: AtomicPreds, mdp: BV.AIGBV) -> BVExpr:
     """
     assert len(aps) > 1
     mdp = attr.evolve(mdp, aig=mdp.aig.lazy_aig)  # Make AIGBV lazy.
-    
+
     unrolled = mdp.unroll(len(aps))
-        
+
     check_val = reduce(op.and_, gen_equiv_checks(aps)).aigbv
 
     test = unrolled >> check_val
     assert test.inputs == unrolled.inputs
     assert len(test.outputs) == 1
-    
+
     return BVExpr(test)

@@ -1,10 +1,3 @@
-import pytest
-
-import aiger_bv as BV
-import aiger_coins as C
-import aiger_ptltl as PLTL
-import networkx as nx 
-import numpy as np
 import funcy as fn
 
 from mce.test_scenarios import scenario_reactive
@@ -14,13 +7,13 @@ from mce.demos import prefix_tree
 
 
 def act(action, coin):
-    return {'a': (action,), 'c': (coin,),}
+    return {'a': (action,), 'c': (coin,)}
 
 
 def test_prefix_tree():
     _, sys = scenario_reactive()
     spec, sys = scenario_reactive()
-    
+
     encoded = [
         [act(True, True), act(True, True), act(True, True)],
         [act(True, True), act(False, True), act(False, True)],
@@ -33,7 +26,7 @@ def test_prefix_tree():
             inputs = fn.project(inputs, sys.inputs)
             yield inputs, outputs
 
-    # Technical debt where sys_actions and env_actions 
+    # Technical debt where sys_actions and env_actions
     # are two different lists.
     demos = [list(zip(*to_demo(etrc))) for etrc in encoded]
 

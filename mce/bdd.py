@@ -1,18 +1,24 @@
 __all__ = ['to_bdd2']
 
-import re
-
 import aiger_bv as BV
 import aiger_bdd
 import funcy as fn
 
-from dd.autoref import BDD
-
 from mce.order import BitOrder
-from mce.utils import cone, Atom, Literal
+from mce.utils import cone
 
 
 def to_bdd2(mdp, horizon, output=None, manager=None):
+    """
+    Compute the BDD for `output`'s value after unrolling the dynamics
+    (`mdp`) `horizon` steps.
+
+    Returns a triplet of:
+     1. The BDD.
+     2. The BDD Manager.
+     3. The order object determining if a given bit is a decision or
+        chance bit.
+    """
     if output is None:
         assert len(mdp.outputs) == 1
         output = fn.first(mdp.outputs)
@@ -23,7 +29,7 @@ def to_bdd2(mdp, horizon, output=None, manager=None):
 
     def flattened(t):
         def fmt(k):
-            idxs = range(imap[k].size)            
+            idxs = range(imap[k].size)
             return [f"{k}##time_{t}[{i}]" for i in idxs]
 
         actions = fn.lmapcat(fmt, inputs)
@@ -42,6 +48,3 @@ def to_bdd2(mdp, horizon, output=None, manager=None):
     order = BitOrder(count_bits(inputs), count_bits(env_inputs), horizon)
 
     return bexpr, bexpr.bdd, order
-
-
-

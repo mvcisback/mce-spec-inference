@@ -1,16 +1,12 @@
 __all__ = ['prefix_tree', 'PrefixTree']
 
-from collections import Counter
 from typing import Tuple, List, Sequence, Mapping
 
 import attr
 import funcy as fn
 import networkx as nx
-import numpy as np
-from bdd2dfa.b2d import BNode
-from scipy.special import logsumexp
 
-from mce.policy3 import BitPolicy, BVPolicy
+from mce.policy3 import BVPolicy
 from mce.spec import ConcreteSpec
 from mce.qbvnode import QBVNode
 
@@ -81,7 +77,6 @@ class PrefixTree:
 
         return sum(map(logp, self._generate_product_edges(ctrl.spec)))
 
-    
     def psat(self, spec: ConcreteSpec):
         nodes = fn.pluck(1, self._generate_product_edges(spec))
         leaves = (x for x in nodes if x[1].qnode.label() is not None)
@@ -102,7 +97,7 @@ def interleave(dyn, etrc):
 
 
 def annotate_visits(tree, root, encoded):
-    """Returns counter indicating how often each edge was 
+    """Returns counter indicating how often each edge was
        visited in the demonstrations.
     """
     for node in tree.nodes:

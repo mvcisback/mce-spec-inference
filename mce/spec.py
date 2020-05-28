@@ -1,7 +1,7 @@
 __all__ = ["ConcreteSpec", "concretize"]
 
 from functools import lru_cache
-from typing import FrozenSet, Sequence, Mapping, Tuple
+from typing import FrozenSet, Sequence, Mapping
 
 import attr
 import aiger_bdd
@@ -35,7 +35,7 @@ class ConcreteSpec:
     system/environment action pairs encoded as bitvectors.
     """
 
-    bexpr: "BDD"
+    bexpr: "BDD"  # noqa: F821
     order: BitOrder  # TODO: Make this a derived quantity.
     dyn: BV.AIGBV
     sys_inputs: FrozenSet[str] = attr.ib(converter=frozenset)
@@ -63,8 +63,6 @@ class ConcreteSpec:
         Converts structured sequence of (sys, env) actions to a
         sequence of bits that this concrete specification recognizes.
         """
-        manager = self.manager
-
         timed_actions = {}
         bmap = self.imap + self.emap
         for t, action in enumerate(actions):
@@ -95,7 +93,7 @@ class ConcreteSpec:
                 mapping[f'{name}[{idx}]'] = bit
 
             yield self.dyn.imap.unblast(mapping)
-        
+
     def accepts(self, actions: Actions) -> bool:
         """Does this spec accept the given sequence of (sys, env) actions."""
         flattened = self.flatten(actions)
@@ -149,7 +147,7 @@ def concretize(
     # Remove ignored outputs of sys.
     for sym in (monitor.inputs ^ sys.outputs):
         size = sys._aigbv.omap[sym].size
-        monitor >>= C.MDP(BV.sink(size, [sym]))    
+        monitor >>= C.MDP(BV.sink(size, [sym]))
 
     bexpr, manager, order = to_bdd2(sys >> monitor, horizon)
     return ConcreteSpec(bexpr, order, sys_inputs=sys.inputs, dyn=sys.aigbv)
