@@ -1,7 +1,5 @@
 __all__ = ['prefix_tree', 'PrefixTree']
 
-from typing import Tuple, List, Sequence, Mapping
-
 import attr
 import funcy as fn
 import networkx as nx
@@ -9,15 +7,6 @@ import networkx as nx
 from mce.policy3 import BVPolicy
 from mce.spec import ConcreteSpec
 from mce.qbvnode import QBVNode
-
-
-Demo = List[Mapping[str, bool]]
-Demos = List[Demo]
-
-AbstractDemo = Sequence[Mapping[str, bool]]
-AbstractDemos = Sequence[AbstractDemo]
-
-Edge = Tuple[int, int]
 
 
 @attr.s(frozen=True, auto_attribs=True)

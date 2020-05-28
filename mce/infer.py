@@ -73,3 +73,6 @@ def spec_mle(mdp, demos, specs, top=100, parallel=False, psat=None):
         best_spec = max(specs, key=score)
         spec2score = fn.walk_keys(lambda x: x[0], score.memory)
     return best_spec, spec2score
+
+
+__all__ = ['spec_mle']

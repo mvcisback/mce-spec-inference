@@ -7,7 +7,6 @@ import funcy as fn
 
 
 TIMED_INPUT_MATCHER = re.compile(r'(.*)##time_(\d+)\[(\d+)\]')
-INPUT_MATCHER = re.compile(r'(.*)\[(\d+)\]')
 
 
 def cone(circ: BV.AIGBV, output: str) -> BV.AIGBV:
