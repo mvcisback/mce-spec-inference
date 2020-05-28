@@ -891,12 +891,12 @@ description = "A python library for manipulating sequential and-inverter gates."
 name = "py-aiger-bv"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "4.2.0"
+version = "4.2.1"
 
 [package.dependencies]
 attrs = ">=19.1,<20.0"
 funcy = ">=1.12,<2.0"
-py-aiger = ">=6.0.0,<7.0.0"
+py-aiger = ">=6.1.1,<7.0.0"
 pyrsistent = ">=0.15.4,<0.16.0"
 
 [[package]]
@@ -918,13 +918,13 @@ description = "Library for creating circuits that encode discrete distributions.
 name = "py-aiger-coins"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "2.0.1"
+version = "2.1.0"
 
 [package.dependencies]
 attrs = ">=19.3,<20.0"
 funcy = ">=1.13,<2.0"
-py-aiger = ">=6.0.0,<7.0.0"
-py-aiger-bv = ">=4.0.0,<5.0.0"
+py-aiger = ">=6.1.1,<7.0.0"
+py-aiger-bv = ">=4.2.1,<5.0.0"
 
 [package.dependencies.py-aiger-bdd]
 optional = true
@@ -1361,6 +1361,14 @@ socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 
 [[package]]
 category = "dev"
+description = "Find dead code"
+name = "vulture"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+version = "1.5"
+
+[[package]]
+category = "dev"
 description = "Measures number of Terminal column cells of wide-character codes"
 name = "wcwidth"
 optional = false
@@ -1399,7 +1407,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "0ab4532160de791553f76b44655da42aee8523ea7003ec312c7fedfec75840cc"
+content-hash = "3692a6038f937f94f2640b88b11a291ff588742c72c0810b6fcb936f3112f8e4"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1799,16 +1807,16 @@ py-aiger-bdd = [
     {file = "py_aiger_bdd-3.0.0-py3-none-any.whl", hash = "sha256:4f7fb3689cb995e0dea40eddaa19b7abf86f886aefd38a30b6314bbd153a2df2"},
 ]
 py-aiger-bv = [
-    {file = "py-aiger-bv-4.2.0.tar.gz", hash = "sha256:377053cd9598c0ecb6c75ed604a58c2e7b97e3fad186c90b5aea61a3481336a9"},
-    {file = "py_aiger_bv-4.2.0-py3-none-any.whl", hash = "sha256:bf74470f50f1713935b335f7d7e2cad2cdde4ca4842ae4b1139ec573832adbfa"},
+    {file = "py-aiger-bv-4.2.1.tar.gz", hash = "sha256:511722e34877171694812e562e6a3a3bf9e86b6319a3efd3260aa7581cbac4cc"},
+    {file = "py_aiger_bv-4.2.1-py3-none-any.whl", hash = "sha256:55a2e49b641c2426beec000f3e695cbaf1dd93c6c80806c2bf4f908f838cc39a"},
 ]
 py-aiger-cnf = [
     {file = "py-aiger-cnf-5.0.0.tar.gz", hash = "sha256:765bcadf0359e841fd12822ec5a9bbb2e57389be387ce3f1cec172ce96022b79"},
     {file = "py_aiger_cnf-5.0.0-py3-none-any.whl", hash = "sha256:2db1d06436bf9cac497d3e1f7fd461a2e40444ca8f1817fcdb9686ead7213d1b"},
 ]
 py-aiger-coins = [
-    {file = "py-aiger-coins-2.0.1.tar.gz", hash = "sha256:d95b98da25cbd720e5602f5c19e26542eba3d43adb11c4e252f78257788611f0"},
-    {file = "py_aiger_coins-2.0.1-py3-none-any.whl", hash = "sha256:fbef62e15409d87bbc77b5d54ccb1886b24fe2ae84e7fad925b33c6d6c9e2edb"},
+    {file = "py-aiger-coins-2.1.0.tar.gz", hash = "sha256:c2bb11d22fdefab04e92430a16d68fef6051cbf3f5904644d838a5ad02d66871"},
+    {file = "py_aiger_coins-2.1.0-py3-none-any.whl", hash = "sha256:9bbce56b7e36053a0024ea52f3532064d7c753605fa9848b8046453a9baedfb0"},
 ]
 py-aiger-gridworld = [
     {file = "py-aiger-gridworld-0.3.0.tar.gz", hash = "sha256:28b1e1ef3ceef6d7bb1b2422f6dd677d7677a388f3dd4e3e991081970dc1f060"},
@@ -2035,6 +2043,10 @@ traitlets = [
 urllib3 = [
     {file = "urllib3-1.25.9-py2.py3-none-any.whl", hash = "sha256:88206b0eb87e6d677d424843ac5209e3fb9d0190d0ee169599165ec25e9d9115"},
     {file = "urllib3-1.25.9.tar.gz", hash = "sha256:3018294ebefce6572a474f0604c2021e33b3fd8006ecd11d62107a5d2a963527"},
+]
+vulture = [
+    {file = "vulture-1.5-py2.py3-none-any.whl", hash = "sha256:7a26d9648a0366b2b15ca9edadc40dae12ee9f48519d7046bd7e84a0a8dfdeaa"},
+    {file = "vulture-1.5.tar.gz", hash = "sha256:07dfab84a32867ae2636bb3998ce50a4e059556dacb0cca4dbe51a1f3cc9d6d7"},
 ]
 wcwidth = [
     {file = "wcwidth-0.1.9-py2.py3-none-any.whl", hash = "sha256:cafe2186b3c009a04067022ce1dcd79cb38d8d65ee4f4791b8888d6599d1bbe1"},
