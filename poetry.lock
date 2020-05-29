@@ -918,7 +918,7 @@ description = "Library for creating circuits that encode discrete distributions.
 name = "py-aiger-coins"
 optional = false
 python-versions = ">=3.7,<4.0"
-version = "2.1.0"
+version = "2.1.1"
 
 [package.dependencies]
 attrs = ">=19.3,<20.0"
@@ -1407,7 +1407,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "3692a6038f937f94f2640b88b11a291ff588742c72c0810b6fcb936f3112f8e4"
+content-hash = "b03256fc1badb33be81c20b52ead02279be7175d0e73953ad195da54f4763cf2"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1815,8 +1815,8 @@ py-aiger-cnf = [
     {file = "py_aiger_cnf-5.0.0-py3-none-any.whl", hash = "sha256:2db1d06436bf9cac497d3e1f7fd461a2e40444ca8f1817fcdb9686ead7213d1b"},
 ]
 py-aiger-coins = [
-    {file = "py-aiger-coins-2.1.0.tar.gz", hash = "sha256:c2bb11d22fdefab04e92430a16d68fef6051cbf3f5904644d838a5ad02d66871"},
-    {file = "py_aiger_coins-2.1.0-py3-none-any.whl", hash = "sha256:9bbce56b7e36053a0024ea52f3532064d7c753605fa9848b8046453a9baedfb0"},
+    {file = "py-aiger-coins-2.1.1.tar.gz", hash = "sha256:09d8379f81d8e5349867f18de78ffe12e45bb0720fa3b0f7d6f08742a5714af2"},
+    {file = "py_aiger_coins-2.1.1-py3-none-any.whl", hash = "sha256:c97e9ef33d7ac80742a947699c6794c86c28fd14973464a776d4bcfd7f56ee68"},
 ]
 py-aiger-gridworld = [
     {file = "py-aiger-gridworld-0.3.0.tar.gz", hash = "sha256:28b1e1ef3ceef6d7bb1b2422f6dd677d7677a388f3dd4e3e991081970dc1f060"},

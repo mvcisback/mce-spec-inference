@@ -13,7 +13,7 @@ import numpy as np
 import scipy as sp
 from bidict import bidict
 from scipy.special import logsumexp
-from scipy.optimize import brentq
+from scipy.optimize import root_scalar
 from bdd2dfa.b2d import QNode
 
 from mce.spec import ConcreteSpec as Spec
@@ -258,7 +258,8 @@ def fit(spec: Spec, psat: float, top: float = 100, bv: bool = False) -> Policy:
     elif f(top) < 0:
         coeff = top
     else:
-        coeff = brentq(f, -top, top)
+        res = root_scalar(f, bracket=(-top, top), method="brentq", xtol=1e-2, rtol=1e-2)
+        coeff = res.root
 
     if coeff < 0:
         # More likely the negated spec than this one.
