@@ -28,17 +28,20 @@ def xor(x, y):
     return (x | y) & ~(x & y)
 
 
-@attr.s(frozen=True, auto_attribs=True)
+@attr.s(frozen=True, auto_attribs=True, eq=False)
 class ConcreteSpec:
     """
     Models an concrete specification over sequences of
     system/environment action pairs encoded as bitvectors.
     """
-
     bexpr: "BDD"  # noqa: F821
     order: BitOrder  # TODO: Make this a derived quantity.
-    dyn: BV.AIGBV
+    mdp: C.MDP
     sys_inputs: FrozenSet[str] = attr.ib(converter=frozenset)
+
+    @property
+    def dyn(self) -> BV.AIGBV:
+        return self.mdp.aigbv
 
     @property
     def imap(self) -> BundleMap:
@@ -150,4 +153,4 @@ def concretize(
         monitor >>= C.MDP(BV.sink(size, [sym]))
 
     bexpr, manager, order = to_bdd2(sys >> monitor, horizon)
-    return ConcreteSpec(bexpr, order, sys_inputs=sys.inputs, dyn=sys.aigbv)
+    return ConcreteSpec(bexpr, order, sys_inputs=sys.inputs, mdp=sys)

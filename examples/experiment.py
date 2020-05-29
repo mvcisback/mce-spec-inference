@@ -223,7 +223,7 @@ def infer():
     trcs = [encode_trace(trc) for trc in TRACES]
     mdp = DYN2
     best, spec2score = spec_mle(
-        mdp, trcs, SPEC2MONITORS.values(), parallel=False
+        mdp, trcs, SPEC2MONITORS.values(), parallel=True
     )
 
     def normalize(score):

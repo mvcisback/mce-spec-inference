@@ -258,7 +258,7 @@ def fit(spec: Spec, psat: float, top: float = 100, bv: bool = False) -> Policy:
     elif f(top) < 0:
         coeff = top
     else:
-        res = root_scalar(f, bracket=(-top, top), method="brentq", xtol=1e-2, rtol=1e-2)
+        res = root_scalar(f, bracket=(-top, top), method="brentq")
         coeff = res.root
 
     if coeff < 0:
