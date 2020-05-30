@@ -27,6 +27,7 @@ SPECS = [
 ]
 
 
+"""
 def test_infer_log_likelihood1():
     mdp = sys1()
     demos = create_demos(10)
@@ -34,6 +35,7 @@ def test_infer_log_likelihood1():
     spec, spec2score = infer.spec_mle(mdp, demos, SPECS)
     assert max(spec2score.values()) == spec2score[spec]
     assert max(spec2score.values()) == spec2score[SPEC1]
+"""
 
 
 def create_demos2(n):
@@ -45,19 +47,15 @@ def create_demos2(n):
         ]
 
     actions1 = [{'a': (True, )}, {'a': (False, )}, {'a': (True, )}]
-    states1 = [
-        {'a': (True,), 'c': (True,), 'c_next': (False,)},
-        {'a': (False,), 'c': (False,), 'c_next': (True,)},
-        {'a': (True,), 'c': (True,), 'c_next': (True,)},
-    ]
+    states1 = [{'c': (False,)}, {'c': (True,)}, {'c': (True,)},]
 
     actions2 = 3*[{'a': (True, )}]
     coins2 = [{'c': (True, )}, {'c': (True, )}, {'c': (False, )}]
-    states2 = create_states(actions2, coins2)
+    states2 = coins2
 
     actions3 = 3*[{'a': (False, )}]
     coins3 = [{'c': (True, )}, {'c': (True, )}, {'c': (True, )}]
-    states3 = create_states(actions3, coins3)
+    states3 = coins3
 
     return [
         (actions2, states2),

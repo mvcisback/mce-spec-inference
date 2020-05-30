@@ -1,8 +1,11 @@
 __all__ = ['prefix_tree', 'PrefixTree']
 
+import aiger_coins as C
 import attr
 import funcy as fn
 import networkx as nx
+from pyrsistent import pmap
+from pyrsistent.typing import PMap
 
 from mce.policy3 import BVPolicy
 from mce.spec import ConcreteSpec
@@ -13,10 +16,11 @@ from mce.qbvnode import QBVNode
 class PrefixTree:
     tree: nx.DiGraph
     root: str
+    dyn: C.MDP
 
-    def action(self, tnode: str):
-        """Returns the action that lead to this tree node."""
-        return self.tree.nodes[tnode]['source']
+    def action(self, tnode1: str, tnode2: str):
+        """Returns the action that transitioned tnode1 to tnode2."""
+        return self.tree.edges[tnode1, tnode2]['action']
 
     def visits(self, tnode: str) -> int:
         """Returns the number of times this tree node was
@@ -40,7 +44,7 @@ class PrefixTree:
         while stack:
             tnode, qbv_node = stack.pop()
             for tnode2 in self.tree.neighbors(tnode):
-                qbv_node2 = qbv_node.transition(self.action(tnode2))
+                qbv_node2 = qbv_node.transition(self.action(tnode, tnode2))
                 yield (tnode, qbv_node), (tnode2, qbv_node2)
                 stack.append((tnode2, qbv_node2))
 
@@ -57,8 +61,8 @@ class PrefixTree:
             raise NotImplementedError
 
         def logp(edge):
-            (_, qbv_node), (tnode2, qbv_node2) = edge
-            action, visits = self.action(tnode2), self.visits(tnode2)
+            (tnode1, qbv_node), (tnode2, qbv_node2) = edge
+            action, visits = self.action(tnode1, tnode2), self.visits(tnode2)
 
             if qbv_node.is_decision:
                 return visits * ctrl.prob(qbv_node, action, log=True)
@@ -72,23 +76,22 @@ class PrefixTree:
         sat_count = sum(self.visits(t)*q.qnode.label() for t, q in leaves)
         return sat_count / self.ndemos
 
+    def write_dot(self, path):
+        template = "{} = {}\n\ntime = {}   visits = {}\ncoins = {}"
+        for node in self.tree.nodes:
+            data = self.tree.nodes[node]
+            data['label'] = template.format(
+                "state" if data['decision'] else "action",
+                dict(data['source']),
+                data['visits'],
+                data['time'],
+                data.get('coins')
+            )
 
-def interleave(dyn, etrc):
-    """
-    1. Interleaves system and environment inputs.
-    2. Makes dictionaries hashable for prefix tree.
-    """
-    for inputs in etrc:
-        if dyn.inputs:
-            yield tuple(fn.project(inputs, dyn.inputs).items())
-        if dyn.env_inputs:
-            yield tuple(fn.project(inputs, dyn.env_inputs).items())
+        nx.nx_pydot.write_dot(self.tree, path)
 
 
-def annotate_visits(tree, root, encoded):
-    """Returns counter indicating how often each edge was
-       visited in the demonstrations.
-    """
+def annotate(tree, root, dyn, trcs):
     for node in tree.nodes:
         tree.nodes[node]['visits'] = 0
 
@@ -99,31 +102,54 @@ def annotate_visits(tree, root, encoded):
 
         raise RuntimeError
 
-    for etrc in encoded:
-        curr = root
-        for sym in etrc:
-            tree.nodes[curr]['visits'] += 1
-            curr = advance(curr, sym)
-        tree.nodes[curr]['visits'] += 1
+    for trc in trcs:
+        node, prev_sym, state = root, None, None
+        for i, sym in enumerate(trc):
+            data = tree.nodes[node]
+            data['visits'] += 1
+            data['decision'] = (i % 2) == 0
+            data['time'] = i // 2
+            node = advance(node, sym)
+
+        data = tree.nodes[node]
+        data['visits'] += 1
+        i += 1
+        data['decision'] = (i % 2) == 0
+        data['time'] = i // 2
+
+    for edge in tree.edges:
+        tnode1, tnode2 = edge
+        if tree.nodes[tnode1]['decision']:
+            payload = tree.nodes[tnode2]['source']
+        else:
+            action = tree.nodes[tnode1]['source']
+            end = tree.nodes[tnode2]['source']
+            assert tree.in_degree(tnode1) == 1
+            tnode0, *_ = tree.predecessors(tnode1)
+            start = tree.nodes[tnode0]['source']
+            payload = dyn.find_env_input(start, action, end)
+
+        tree.edges[edge]['action'] = payload
 
 
 def prefix_tree(dyn, trcs) -> PrefixTree:
     """Encodes i/o traces as sequences of (sys, env) actions."""
-    encoded = encode_trcs(dyn, trcs)
-    encoded = [list(interleave(dyn, etrc)) for etrc in encoded]
+    trcs = [list(fn.interleave(*trc)) for trc in trcs]
+    trcs = [fn.lmap(pmap, trc) for trc in trcs]
 
-    tree, root = nx.prefix_tree(encoded)       # This tree has a dummy sink
+    tree, root = nx.prefix_tree(trcs)          # This tree has a dummy sink
     tree.remove_node(nx.generators.trees.NIL)  # which we don't want.
+    tree.nodes[root]['source'] = pmap(dyn.aigbv.latch2init)
 
-    annotate_visits(tree, root, encoded)
+    annotate(tree, root, dyn, trcs)
 
-    return PrefixTree(tree, root)
-
-
-def encode_trcs(dyn, trcs):
-    """Encodes i/o traces as sequences of (sys, env) actions."""
-    return [_encode_trc(dyn, *v) for v in trcs]
+    return PrefixTree(tree, root, dyn)
 
 
-def _encode_trc(dyn, sys_actions, states):
-    return dyn.encode_trc(sys_actions, states)
+def find_coins(dyn, trcs):
+    return [_find_coins(dyn, *v) for v in trcs]
+
+
+def _find_coins(dyn, sys_actions, states):
+    etrc = dyn.encode_trc(sys_actions, states)
+    return [fn.project(x, dyn.env_inputs) for x in etrc]

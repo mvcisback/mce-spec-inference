@@ -21,7 +21,7 @@ multiprocess = "^0.70.9"
 py-aiger = "^6.1.0"
 py-aiger-bdd = "^3.0.0"
 py-aiger-bv = "^4.1.0"
-py-aiger-coins = {version = "^2.1.1", extras = ["sat", "bdd"]}
+py-aiger-coins = {version = "^2.2.0", extras = ["sat", "bdd"]}
 py-aiger-sat = "^3.0.0"
 scipy = "^1.4.1"
 

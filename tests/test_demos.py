@@ -11,26 +11,25 @@ def act(action, coin):
 
 
 def test_prefix_tree():
-    _, sys = scenario_reactive()
     spec, sys = scenario_reactive()
 
     encoded = [
         [act(True, True), act(True, True), act(True, True)],
-        [act(True, True), act(False, True), act(False, True)],
+        [act(True, True), act(False, True), act(False, False)],
     ]
 
     def to_demo(encoded_trc):
         io_seq = zip(encoded_trc, sys.aigbv.simulate(encoded_trc))
-        for inputs, (outputs, _) in io_seq:
-            outputs = fn.project(outputs, sys.outputs)
+        for inputs, (_, state) in io_seq:
             inputs = fn.project(inputs, sys.inputs)
-            yield inputs, outputs
+            yield inputs, state
 
     # Technical debt where sys_actions and env_actions
     # are two different lists.
     demos = [list(zip(*to_demo(etrc))) for etrc in encoded]
 
     tree = prefix_tree(sys, demos)
+    tree.write_dot('foo.dot')
 
     cspec = concretize(spec, sys, 3)
     ctrl = fit(cspec, 0.7, bv=True)
@@ -38,3 +37,6 @@ def test_prefix_tree():
     assert lprob < 0
 
     assert tree.psat(cspec) == 1/2
+
+    #lprob2 = tree.log_likelihood(ctrl, actions_only=False)
+    #assert lprob2 < lprob
