@@ -38,5 +38,5 @@ def test_prefix_tree():
 
     assert tree.psat(cspec) == 1/2
 
-    #lprob2 = tree.log_likelihood(ctrl, actions_only=False)
-    #assert lprob2 < lprob
+    lprob2 = tree.log_likelihood(ctrl, actions_only=False)
+    assert lprob2 < lprob

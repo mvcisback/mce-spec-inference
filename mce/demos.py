@@ -4,6 +4,7 @@ import aiger_coins as C
 import attr
 import funcy as fn
 import networkx as nx
+import numpy as np
 from pyrsistent import pmap
 from pyrsistent.typing import PMap
 
@@ -57,16 +58,23 @@ class PrefixTree:
         controllers as the environment probabilities will cancel
         anyway and may require non-trivial additional computation.
         """
-        if not actions_only:
-            raise NotImplementedError
 
         def logp(edge):
             (tnode1, qbv_node), (tnode2, qbv_node2) = edge
-            action, visits = self.action(tnode1, tnode2), self.visits(tnode2)
+            visits = self.visits(tnode2)
 
             if qbv_node.is_decision:
-                return visits * ctrl.prob(qbv_node, action, log=True)
-            return 0
+                action = self.action(tnode1, tnode2)
+                lprob = ctrl.prob(qbv_node, action, log=True)
+            elif actions_only:
+                lprob = 0
+            else:
+                action = self.tree.nodes[tnode1]['source']
+                start = self.tree.nodes[tnode1]['state']
+                end = self.tree.nodes[tnode2]['state']
+                prob = self.dyn.prob(start, action, end)
+                lprob = np.log(prob.numerator) - np.log(prob.denominator)
+            return visits * lprob
 
         return sum(map(logp, self._generate_product_edges(ctrl.spec)))
 
@@ -77,15 +85,17 @@ class PrefixTree:
         return sat_count / self.ndemos
 
     def write_dot(self, path):
-        template = "{} = {}\n\ntime = {}   visits = {}\ncoins = {}"
+        template = "decision = {}\n payload{}\n\n" \
+            " time = {}   visits = {}\ncoins = {}\nstate={}"
         for node in self.tree.nodes:
             data = self.tree.nodes[node]
             data['label'] = template.format(
-                "state" if data['decision'] else "action",
+                data['decision'],
                 dict(data['source']),
                 data['visits'],
                 data['time'],
-                data.get('coins')
+                data.get('coins'),
+                data.get('state'),
             )
 
         nx.nx_pydot.write_dot(self.tree, path)
@@ -110,12 +120,17 @@ def annotate(tree, root, dyn, trcs):
             data['decision'] = (i % 2) == 0
             data['time'] = i // 2
             node = advance(node, sym)
+            if data['decision']:
+                state = data['state'] = data['source']
+            else:
+                data['state'] = state
 
         data = tree.nodes[node]
         data['visits'] += 1
         i += 1
         data['decision'] = (i % 2) == 0
         data['time'] = i // 2
+        data['state'] = data['source']
 
     # Reuse precomputed coin flips
     find_env_input = fn.memoize(dyn.find_env_input)
@@ -126,10 +141,8 @@ def annotate(tree, root, dyn, trcs):
             payload = tree.nodes[tnode2]['source']
         else:
             action = pmap(tree.nodes[tnode1]['source'])
-            end = pmap(tree.nodes[tnode2]['source'])
-            assert tree.in_degree(tnode1) == 1
-            tnode0, *_ = tree.predecessors(tnode1)
-            start = pmap(tree.nodes[tnode0]['source'])
+            start = pmap(tree.nodes[tnode1]['state'])
+            end = pmap(tree.nodes[tnode2]['state'])
             payload = find_env_input(start, action, end)
 
         tree.edges[edge]['action'] = payload
