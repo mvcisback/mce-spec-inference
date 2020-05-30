@@ -117,17 +117,20 @@ def annotate(tree, root, dyn, trcs):
         data['decision'] = (i % 2) == 0
         data['time'] = i // 2
 
+    # Reuse precomputed coin flips
+    find_env_input = fn.memoize(dyn.find_env_input)
+
     for edge in tree.edges:
         tnode1, tnode2 = edge
         if tree.nodes[tnode1]['decision']:
             payload = tree.nodes[tnode2]['source']
         else:
-            action = tree.nodes[tnode1]['source']
-            end = tree.nodes[tnode2]['source']
+            action = pmap(tree.nodes[tnode1]['source'])
+            end = pmap(tree.nodes[tnode2]['source'])
             assert tree.in_degree(tnode1) == 1
             tnode0, *_ = tree.predecessors(tnode1)
-            start = tree.nodes[tnode0]['source']
-            payload = dyn.find_env_input(start, action, end)
+            start = pmap(tree.nodes[tnode0]['source'])
+            payload = find_env_input(start, action, end)
 
         tree.edges[edge]['action'] = payload
 
@@ -144,12 +147,3 @@ def prefix_tree(dyn, trcs) -> PrefixTree:
     annotate(tree, root, dyn, trcs)
 
     return PrefixTree(tree, root, dyn)
-
-
-def find_coins(dyn, trcs):
-    return [_find_coins(dyn, *v) for v in trcs]
-
-
-def _find_coins(dyn, sys_actions, states):
-    etrc = dyn.encode_trc(sys_actions, states)
-    return [fn.project(x, dyn.env_inputs) for x in etrc]
